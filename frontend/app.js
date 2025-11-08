@@ -388,6 +388,9 @@ function updateStatus(status) {
     } else {
         complicationsList.innerHTML = '<p style="color: #666; font-size: 0.9rem;">No active complications</p>';
     }
+
+    // Update vitals based on complications
+    adjustVitalsForComplications(status.active_complications || []);
 }
 
 async function refreshStatus() {
@@ -414,8 +417,9 @@ async function resolveComplication(compName) {
         const data = await response.json();
 
         if (data.resolved) {
-            addSystemMessage(`Complication resolved: ${compName}`);
+            addSystemMessage(`Complication resolved: ${compName} - Patient stabilizing.`);
             updateStatus(data.status);
+            // Vitals will automatically update via adjustVitalsForComplications in updateStatus
         }
 
     } catch (error) {
@@ -494,6 +498,78 @@ function getAgentName(agentType) {
         'assistant': '👨‍⚕️ Surgical Assistant'
     };
     return names[agentType] || agentType;
+}
+
+// Adjust vitals based on active complications
+function adjustVitalsForComplications(complications) {
+    // Reset to normal baseline
+    baseVitals.hr = 72;
+    baseVitals.bp.systolic = 120;
+    baseVitals.bp.diastolic = 80;
+    baseVitals.spo2 = 98;
+    baseVitals.temp = 37.0;
+
+    // Apply modifications based on each active complication
+    complications.forEach(comp => {
+        const name = comp.name.toLowerCase();
+
+        // Blood pressure complications
+        if (name.includes('blood pressure drop') || name.includes('hypotension')) {
+            baseVitals.bp.systolic = 85;
+            baseVitals.bp.diastolic = 55;
+            baseVitals.hr = 105; // Compensatory tachycardia
+        }
+        else if (name.includes('blood pressure spike') || name.includes('hypertension')) {
+            baseVitals.bp.systolic = 180;
+            baseVitals.bp.diastolic = 110;
+        }
+
+        // Oxygen complications
+        if (name.includes('oxygen saturation drop') || name.includes('hypoxia')) {
+            baseVitals.spo2 = 88;
+            baseVitals.hr = 95; // Tachycardia from hypoxia
+        }
+
+        // Cardiac complications
+        if (name.includes('arrhythmia')) {
+            baseVitals.hr = 135; // Irregular rapid heart rate
+        }
+
+        // Bleeding complications
+        if (name.includes('bleeding') || name.includes('hemorrhage')) {
+            baseVitals.hr = 110; // Tachycardia from blood loss
+            baseVitals.bp.systolic = 95; // Dropping BP
+            baseVitals.bp.diastolic = 60;
+        }
+
+        // Anxiety/stress
+        if (name.includes('anxiety')) {
+            baseVitals.hr = 95;
+            baseVitals.bp.systolic = 135;
+            baseVitals.bp.diastolic = 88;
+        }
+
+        // Allergic reaction
+        if (name.includes('allergic')) {
+            baseVitals.hr = 100;
+            baseVitals.bp.systolic = 100;
+            baseVitals.spo2 = 93;
+        }
+
+        // Difficult intubation/airway issues
+        if (name.includes('intubation') || name.includes('airway')) {
+            baseVitals.spo2 = 91;
+            baseVitals.hr = 105;
+        }
+
+        // Temperature
+        if (name.includes('fever') || name.includes('infection')) {
+            baseVitals.temp = 38.5;
+        }
+    });
+
+    // Immediately update display with new values
+    updateVitals();
 }
 
 // Vitals monitoring functions
