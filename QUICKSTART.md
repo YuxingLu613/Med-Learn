@@ -5,7 +5,7 @@ Get the Surgical Training Multi-Agent System running in 5 minutes!
 ## Prerequisites
 
 - Python 3.8+
-- Anthropic API key ([Get one here](https://console.anthropic.com))
+- DeepSeek API key ([Get one here](https://platform.deepseek.com))
 
 ## Setup Steps
 
@@ -26,7 +26,7 @@ cp .env.example .env
 Edit `.env` and add your API key:
 
 ```
-ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxx
+DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxx
 ```
 
 ### 3. Run the Application
@@ -113,7 +113,7 @@ When a complication appears:
 
 **Agents not responding?**
 - Verify your API key in `.env`
-- Check your Anthropic API credits
+- Check your DeepSeek API credits
 
 **CORS errors?**
 - Use `http://localhost:8000`, not file://

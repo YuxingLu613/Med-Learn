@@ -13,7 +13,7 @@ if [ ! -f .env ]; then
     echo "Creating .env from .env.example..."
     cp .env.example .env
     echo ""
-    echo "Please edit .env and add your ANTHROPIC_API_KEY"
+    echo "Please edit .env and add your DEEPSEEK_API_KEY"
     echo "Then run this script again."
     exit 1
 fi

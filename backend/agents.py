@@ -4,7 +4,7 @@ Each agent represents a different role in the operating room.
 """
 
 from typing import List, Dict
-import anthropic
+from openai import OpenAI
 import os
 from dataclasses import dataclass
 
@@ -22,7 +22,10 @@ class SurgicalAgent:
         self.role = role
         self.personality = personality
         self.expertise = expertise
-        self.client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+        self.client = OpenAI(
+            api_key=os.getenv("DEEPSEEK_API_KEY"),
+            base_url="https://api.deepseek.com"
+        )
         self.conversation_history: List[Dict] = []
 
     def get_system_prompt(self, scenario_context: str) -> str:
@@ -53,15 +56,20 @@ Keep responses concise (2-3 sentences) and professional. Respond as you would in
             "content": user_message
         })
 
-        # Generate response
-        response = self.client.messages.create(
-            model="claude-3-5-sonnet-20241022",
+        # Prepare messages with system prompt
+        messages = [
+            {"role": "system", "content": self.get_system_prompt(scenario_context)}
+        ] + self.conversation_history
+
+        # Generate response using DeepSeek
+        response = self.client.chat.completions.create(
+            model="deepseek-chat",
+            messages=messages,
             max_tokens=200,
-            system=self.get_system_prompt(scenario_context),
-            messages=self.conversation_history
+            temperature=0.7
         )
 
-        assistant_message = response.content[0].text
+        assistant_message = response.choices[0].message.content
 
         # Add assistant response to history
         self.conversation_history.append({

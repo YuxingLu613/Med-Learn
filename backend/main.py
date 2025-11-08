@@ -184,12 +184,12 @@ if __name__ == "__main__":
     print(f"""
     ╔═══════════════════════════════════════════════╗
     ║  Surgical Training Multi-Agent System         ║
-    ║  Starting server...                           ║
+    ║  Powered by DeepSeek AI                       ║
     ╚═══════════════════════════════════════════════╝
 
     Server running at: http://{host}:{port}
 
-    Make sure you have set your ANTHROPIC_API_KEY in .env file
+    Make sure you have set your DEEPSEEK_API_KEY in .env file
     """)
 
     uvicorn.run(app, host=host, port=port)

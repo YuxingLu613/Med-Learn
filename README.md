@@ -33,14 +33,14 @@ An interactive web-based surgical training simulator powered by AI agents. Clini
 ## Tech Stack
 
 - **Backend**: Python, FastAPI
-- **AI**: Anthropic Claude API (multi-agent system)
+- **AI**: DeepSeek AI API (multi-agent system)
 - **Frontend**: HTML, CSS, JavaScript (vanilla)
 - **API**: RESTful endpoints with JSON
 
 ## Prerequisites
 
 - Python 3.8 or higher
-- Anthropic API key (get one at [console.anthropic.com](https://console.anthropic.com))
+- DeepSeek API key (get one at [platform.deepseek.com](https://platform.deepseek.com))
 - pip (Python package manager)
 
 ## Installation
@@ -61,9 +61,9 @@ An interactive web-based surgical training simulator powered by AI agents. Clini
    cp .env.example .env
    ```
 
-   Edit `.env` and add your Anthropic API key:
+   Edit `.env` and add your DeepSeek API key:
    ```
-   ANTHROPIC_API_KEY=your_actual_api_key_here
+   DEEPSEEK_API_KEY=your_actual_api_key_here
    ```
 
 ## Running the Application
@@ -239,7 +239,7 @@ Currently procedures are for display only. To add custom logic per procedure, ex
 ## Troubleshooting
 
 **Issue**: "No API key provided"
-- **Solution**: Make sure you've created a `.env` file with your `ANTHROPIC_API_KEY`
+- **Solution**: Make sure you've created a `.env` file with your `DEEPSEEK_API_KEY`
 
 **Issue**: "Connection refused" when opening browser
 - **Solution**: Ensure the backend server is running (`python backend/main.py`)
@@ -260,7 +260,7 @@ Contributions welcome! Please feel free to submit issues or pull requests.
 
 ## Acknowledgments
 
-- Built with [Anthropic Claude](https://www.anthropic.com/claude) for intelligent agent responses
+- Built with [DeepSeek AI](https://www.deepseek.com) for intelligent agent responses
 - Designed for medical education and training purposes
 
 ---
