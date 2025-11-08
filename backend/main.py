@@ -57,11 +57,50 @@ class ChatResponse(BaseModel):
     failure_reason: Optional[str] = None
 
 
+class EvaluationRequest(BaseModel):
+    procedure: str
+    finalScore: int
+    failed: bool
+    complications: int
+    interactions: int
+    phasesCompleted: int
+    duration: Optional[str] = None
+    timeline: Optional[List[dict]] = None
+
+
+class EvaluationResponse(BaseModel):
+    overall_assessment: str
+    key_observations: str
+    recommendations: str
+    strengths: List[str]
+    improvements: List[str]
+
+
 # API Endpoints
 @app.get("/")
 async def root():
-    """Serve the frontend."""
-    return FileResponse("frontend/index.html")
+    """Serve the landing page."""
+    return FileResponse("frontend/landing.html")
+
+@app.get("/landing.html")
+async def landing():
+    """Serve the landing page."""
+    return FileResponse("frontend/landing.html")
+
+@app.get("/simulator.html")
+async def simulator():
+    """Serve the simulator page."""
+    return FileResponse("frontend/simulator.html")
+
+@app.get("/dashboard.html")
+async def dashboard():
+    """Serve the dashboard page."""
+    return FileResponse("frontend/dashboard.html")
+
+@app.get("/summary.html")
+async def summary():
+    """Serve the summary page."""
+    return FileResponse("frontend/summary.html")
 
 
 @app.post("/api/scenario/start")
@@ -203,6 +242,167 @@ async def get_agent_actions(agent_type: str):
         raise HTTPException(status_code=404, detail=f"No actions found for agent type '{agent_type}'")
 
     return {"actions": actions}
+
+
+@app.post("/api/evaluate")
+async def evaluate_performance(request: EvaluationRequest) -> EvaluationResponse:
+    """Generate AI-powered evaluation of surgical performance."""
+    from openai import OpenAI
+
+    # Initialize DeepSeek client
+    client = OpenAI(
+        api_key=os.getenv("DEEPSEEK_API_KEY"),
+        base_url="https://api.deepseek.com"
+    )
+
+    # Create evaluation prompt
+    prompt = f"""
+You are an expert surgical instructor evaluating a trainee's performance in a surgical simulation.
+
+Procedure: {request.procedure}
+Final Score: {request.finalScore}/100
+Status: {'Failed' if request.failed else 'Successful'}
+Complications Handled: {request.complications}
+Team Interactions: {request.interactions}
+Phases Completed: {request.phasesCompleted}
+Duration: {request.duration or 'N/A'}
+
+Based on this performance data, provide a comprehensive evaluation with:
+
+1. Overall Assessment (2-3 sentences about their overall performance)
+2. Key Observations (2-3 specific observations about their decisions and actions)
+3. Recommendations (2-3 actionable recommendations for improvement)
+4. Strengths (list 2-4 specific things they did well)
+5. Areas for Improvement (list 2-4 specific areas where they can improve)
+
+Be constructive, professional, and specific. Format your response as:
+
+OVERALL_ASSESSMENT: [your assessment]
+
+KEY_OBSERVATIONS: [your observations]
+
+RECOMMENDATIONS: [your recommendations]
+
+STRENGTHS:
+- [strength 1]
+- [strength 2]
+- [strength 3]
+
+IMPROVEMENTS:
+- [improvement 1]
+- [improvement 2]
+- [improvement 3]
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are an expert surgical instructor providing detailed, constructive feedback."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=800,
+            temperature=0.7
+        )
+
+        content = response.choices[0].message.content
+
+        # Parse the response
+        overall_assessment = ""
+        key_observations = ""
+        recommendations = ""
+        strengths = []
+        improvements = []
+
+        # Simple parsing
+        lines = content.split('\n')
+        current_section = None
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+
+            if line.startswith('OVERALL_ASSESSMENT:'):
+                current_section = 'overall'
+                overall_assessment = line.replace('OVERALL_ASSESSMENT:', '').strip()
+            elif line.startswith('KEY_OBSERVATIONS:'):
+                current_section = 'observations'
+                key_observations = line.replace('KEY_OBSERVATIONS:', '').strip()
+            elif line.startswith('RECOMMENDATIONS:'):
+                current_section = 'recommendations'
+                recommendations = line.replace('RECOMMENDATIONS:', '').strip()
+            elif line.startswith('STRENGTHS:'):
+                current_section = 'strengths'
+            elif line.startswith('IMPROVEMENTS:'):
+                current_section = 'improvements'
+            elif line.startswith('- '):
+                item = line.replace('- ', '').strip()
+                if current_section == 'strengths':
+                    strengths.append(item)
+                elif current_section == 'improvements':
+                    improvements.append(item)
+            else:
+                # Continue previous section
+                if current_section == 'overall' and overall_assessment:
+                    overall_assessment += ' ' + line
+                elif current_section == 'observations' and key_observations:
+                    key_observations += ' ' + line
+                elif current_section == 'recommendations' and recommendations:
+                    recommendations += ' ' + line
+
+        # Ensure we have some content
+        if not overall_assessment:
+            overall_assessment = f"You completed the {request.procedure} with a score of {request.finalScore}/100."
+        if not key_observations:
+            key_observations = f"You handled {request.complications} complications and completed {request.phasesCompleted} phases."
+        if not recommendations:
+            recommendations = "Continue practicing to improve your surgical skills and decision-making abilities."
+        if not strengths:
+            strengths = ["Completed the simulation", "Gained valuable experience"]
+        if not improvements:
+            improvements = ["Practice more complex scenarios", "Work on team communication"]
+
+        return EvaluationResponse(
+            overall_assessment=overall_assessment,
+            key_observations=key_observations,
+            recommendations=recommendations,
+            strengths=strengths,
+            improvements=improvements
+        )
+
+    except Exception as e:
+        # Fallback to basic evaluation if AI fails
+        print(f"Error generating AI evaluation: {e}")
+
+        strengths = []
+        improvements = []
+
+        if not request.failed:
+            strengths.append("Successfully completed the surgical procedure")
+
+        if request.finalScore >= 80:
+            strengths.append("Maintained excellent performance throughout the surgery")
+
+        if request.complications == 0:
+            strengths.append("Avoided complications during the procedure")
+        elif request.complications > 3:
+            improvements.append("Focus on preventing and managing complications")
+
+        if request.failed:
+            improvements.append("Review critical decision-making points")
+            improvements.append("Practice handling high-pressure situations")
+
+        if request.finalScore < 70:
+            improvements.append("Work on improving overall performance and technique")
+
+        return EvaluationResponse(
+            overall_assessment=f"You completed the {request.procedure} with a final score of {request.finalScore}/100. {'The surgery was successful.' if not request.failed else 'The surgery did not complete successfully.'}",
+            key_observations=f"During this procedure, you had {request.interactions} team interactions and handled {request.complications} complications across {request.phasesCompleted} phases.",
+            recommendations="Continue practicing similar procedures to build confidence and improve your surgical skills. Focus on team communication, decision-making speed, and crisis management.",
+            strengths=strengths if strengths else ["Completed the simulation", "Gained valuable experience"],
+            improvements=improvements if improvements else ["Continue practicing", "Work on team communication"]
+        )
 
 
 # Serve static files

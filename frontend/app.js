@@ -5,6 +5,20 @@ const API_BASE = window.location.origin;
 let currentAgent = null;
 let scenarioActive = false;
 
+// Session tracking
+let sessionData = {
+    procedure: '',
+    timestamp: null,
+    startTime: null,
+    endTime: null,
+    finalScore: 0,
+    failed: false,
+    complications: 0,
+    interactions: 0,
+    phasesCompleted: 0,
+    timeline: []
+};
+
 // DOM Elements
 const startBtn = document.getElementById('startBtn');
 const sendBtn = document.getElementById('sendBtn');
@@ -83,6 +97,25 @@ async function startScenario() {
         completionPanel.style.display = 'none';
         teamSelection.style.display = 'block'; // Show team selection
 
+        // Initialize session tracking
+        sessionData = {
+            procedure: procedure,
+            timestamp: new Date().toISOString(),
+            startTime: Date.now(),
+            endTime: null,
+            finalScore: 100,
+            failed: false,
+            complications: 0,
+            interactions: 0,
+            phasesCompleted: 0,
+            timeline: [{
+                phase: 'START',
+                time: new Date().toLocaleTimeString(),
+                description: `Surgery started: ${procedure}`,
+                type: 'phase'
+            }]
+        };
+
         updateStatus(data.status);
         startVitalsMonitoring();
 
@@ -152,11 +185,18 @@ async function sendMessage() {
         // Add agent response
         addMessage('agent', data.response, getAgentName(currentAgent));
 
+        // Track interaction
+        sessionData.interactions++;
+
         // Parse and update vitals from response
         parseVitalsFromText(data.response);
 
         // Check for failure
         if (data.failed) {
+            sessionData.failed = true;
+            sessionData.endTime = Date.now();
+            sessionData.finalScore = 0;
+            saveSessionData();
             showFailure(data.failure_reason);
             scenarioActive = false;
             messageInput.disabled = true;
@@ -167,6 +207,14 @@ async function sendMessage() {
 
         // Check for complications
         if (data.complication) {
+            sessionData.complications++;
+            sessionData.timeline.push({
+                phase: currentPhase.textContent,
+                time: new Date().toLocaleTimeString(),
+                description: `Complication occurred: ${data.complication.name}`,
+                type: 'complication',
+                complication: data.complication.name
+            });
             showComplicationAlert(data.complication);
             // Refresh status to show new complication
             await refreshStatus();
@@ -250,11 +298,18 @@ async function sendAction(actionId, actionLabel) {
         // Add agent response
         addMessage('agent', data.response, getAgentName(currentAgent));
 
+        // Track interaction
+        sessionData.interactions++;
+
         // Parse and update vitals from response
         parseVitalsFromText(data.response);
 
         // Check for failure
         if (data.failed) {
+            sessionData.failed = true;
+            sessionData.endTime = Date.now();
+            sessionData.finalScore = 0;
+            saveSessionData();
             showFailure(data.failure_reason);
             scenarioActive = false;
             messageInput.disabled = true;
@@ -266,6 +321,14 @@ async function sendAction(actionId, actionLabel) {
 
         // Check for complications
         if (data.complication) {
+            sessionData.complications++;
+            sessionData.timeline.push({
+                phase: currentPhase.textContent,
+                time: new Date().toLocaleTimeString(),
+                description: `Complication occurred: ${data.complication.name}`,
+                type: 'complication',
+                complication: data.complication.name
+            });
             showComplicationAlert(data.complication);
             await refreshStatus();
         }
@@ -328,13 +391,30 @@ function showComplicationAlert(complication) {
 }
 
 function updateStatus(status) {
-    currentPhase.textContent = status.phase.replace('_', ' ').toUpperCase();
+    const previousPhase = currentPhase.textContent;
+    const newPhase = status.phase.replace('_', ' ').toUpperCase();
+
+    currentPhase.textContent = newPhase;
     successScore.textContent = status.success_score;
+
+    // Update session data
+    sessionData.finalScore = status.success_score;
+
+    // Track phase changes
+    if (previousPhase !== newPhase && previousPhase !== '-') {
+        sessionData.phasesCompleted++;
+        sessionData.timeline.push({
+            phase: newPhase,
+            time: new Date().toLocaleTimeString(),
+            description: `Phase advanced to: ${newPhase}`,
+            type: 'phase'
+        });
+    }
 
     // Check for automatic phase advancement
     if (status.auto_advanced) {
         showPhaseAdvanceNotification();
-        addSystemMessage(`✨ Phase automatically advanced to: ${status.phase.replace('_', ' ').toUpperCase()}`);
+        addSystemMessage(`✨ Phase automatically advanced to: ${newPhase}`);
     }
 
     // Update patient status
@@ -425,6 +505,25 @@ function showCompletion(completion) {
     const resultClass = completion.success ? 'success' : 'failure';
     const emoji = completion.success ? '✅' : '❌';
 
+    // Update and save session data
+    sessionData.endTime = Date.now();
+    sessionData.finalScore = completion.score;
+    sessionData.failed = !completion.success;
+    sessionData.timeline.push({
+        phase: 'COMPLETE',
+        time: new Date().toLocaleTimeString(),
+        description: completion.success ? 'Surgery completed successfully' : 'Surgery completed with issues',
+        type: 'phase'
+    });
+
+    // Calculate duration
+    const durationMs = sessionData.endTime - sessionData.startTime;
+    const minutes = Math.floor(durationMs / 60000);
+    const seconds = Math.floor((durationMs % 60000) / 1000);
+    sessionData.duration = `${minutes} min ${seconds} sec`;
+
+    saveSessionData();
+
     completionResults.innerHTML = `
         <div class="completion-result">
             <h4>${emoji} ${completion.success ? 'Surgery Successful!' : 'Surgery Failed'}</h4>
@@ -444,12 +543,30 @@ function showCompletion(completion) {
     `;
 
     addSystemMessage(`Surgery completed with score: ${completion.score}/100`);
+
+    // Add view summary button
+    const viewSummaryBtn = document.getElementById('viewSummaryBtn');
+    if (viewSummaryBtn) {
+        viewSummaryBtn.style.display = 'block';
+        viewSummaryBtn.onclick = () => {
+            window.location.href = '/summary.html';
+        };
+    }
 }
 
 function showFailure(reason) {
     completionPanel.style.display = 'block';
     completionPanel.style.background = '#fee';
     completionPanel.style.borderColor = '#f44336';
+
+    // Calculate duration if not already set
+    if (!sessionData.endTime) {
+        sessionData.endTime = Date.now();
+        const durationMs = sessionData.endTime - sessionData.startTime;
+        const minutes = Math.floor(durationMs / 60000);
+        const seconds = Math.floor((durationMs % 60000) / 1000);
+        sessionData.duration = `${minutes} min ${seconds} sec`;
+    }
 
     completionResults.innerHTML = `
         <div class="completion-result">
@@ -459,7 +576,7 @@ function showFailure(reason) {
             <strong>Reason:</strong> ${reason}
         </div>
         <div class="completion-result">
-            <strong>Final Score:</strong> 0/100
+            <strong>Final Score:</strong> ${sessionData.finalScore}/100
         </div>
         <div class="completion-result" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #ccc; color: #c62828;">
             Critical mistakes led to surgery failure. Review the procedure and try again.
@@ -480,6 +597,15 @@ function showFailure(reason) {
 
     chatMessages.appendChild(failureDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // Add view summary button
+    const viewSummaryBtn = document.getElementById('viewSummaryBtn');
+    if (viewSummaryBtn) {
+        viewSummaryBtn.style.display = 'block';
+        viewSummaryBtn.onclick = () => {
+            window.location.href = '/summary.html';
+        };
+    }
 }
 
 function getAgentName(agentType) {
@@ -712,6 +838,25 @@ function updateVitals() {
 
     if (temp > 37.5 || temp < 36.5) temperature.className = 'vital-value warning';
     if (temp > 38.0 || temp < 36.0) temperature.className = 'vital-value critical';
+}
+
+// Session data management
+function saveSessionData() {
+    // Save to localStorage
+    const sessions = JSON.parse(localStorage.getItem('surgicalSessions') || '[]');
+    sessions.push(sessionData);
+
+    // Keep only last 50 sessions to avoid storage issues
+    if (sessions.length > 50) {
+        sessions.shift();
+    }
+
+    localStorage.setItem('surgicalSessions', JSON.stringify(sessions));
+
+    // Also save current session for summary page
+    localStorage.setItem('currentSessionSummary', JSON.stringify(sessionData));
+
+    console.log('Session saved:', sessionData);
 }
 
 // Make resolveComplication available globally

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surgery Summary - MedLearn</title>
+    <link rel="stylesheet" href="/static/shared.css">
+    <link rel="stylesheet" href="/static/summary.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">🏥</span>
+                <span class="logo-text">MedLearn</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/landing.html">Home</a></li>
+                <li><a href="/dashboard.html">Dashboard</a></li>
+                <li><a href="/simulator.html">Simulator</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="summary-container">
+        <!-- Header -->
+        <header class="summary-header">
+            <div class="header-left">
+                <h1 id="procedureName">Surgery Summary</h1>
+                <p id="procedureDate">-</p>
+            </div>
+            <div class="header-right">
+                <div class="overall-score">
+                    <div class="score-label">Overall Score</div>
+                    <div class="score-value" id="overallScore">-</div>
+                </div>
+                <div class="status-indicator" id="statusIndicator">
+                    <span id="statusText">-</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Performance Overview -->
+        <section class="performance-overview">
+            <h2>Performance Overview</h2>
+            <div class="overview-grid">
+                <div class="overview-card">
+                    <div class="card-icon">⏱️</div>
+                    <div class="card-content">
+                        <div class="card-value" id="duration">-</div>
+                        <div class="card-label">Duration</div>
+                    </div>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon">💬</div>
+                    <div class="card-content">
+                        <div class="card-value" id="interactions">-</div>
+                        <div class="card-label">Team Interactions</div>
+                    </div>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon">⚠️</div>
+                    <div class="card-content">
+                        <div class="card-value" id="complications">-</div>
+                        <div class="card-label">Complications Handled</div>
+                    </div>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon">📋</div>
+                    <div class="card-content">
+                        <div class="card-value" id="phasesCompleted">-</div>
+                        <div class="card-label">Phases Completed</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Evaluation -->
+        <section class="ai-evaluation">
+            <h2>AI Evaluation & Feedback</h2>
+            <div class="evaluation-content" id="evaluationContent">
+                <div class="loading">Generating detailed evaluation...</div>
+            </div>
+        </section>
+
+        <!-- Performance Breakdown -->
+        <section class="performance-breakdown">
+            <h2>Performance Breakdown</h2>
+            <div class="breakdown-grid">
+                <div class="breakdown-card">
+                    <h3>Strengths</h3>
+                    <ul id="strengthsList" class="strengths-list">
+                        <li>Loading...</li>
+                    </ul>
+                </div>
+                <div class="breakdown-card">
+                    <h3>Areas for Improvement</h3>
+                    <ul id="improvementsList" class="improvements-list">
+                        <li>Loading...</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Skill Ratings -->
+        <section class="skill-ratings">
+            <h2>Skill Assessment</h2>
+            <div class="skills-grid">
+                <div class="skill-rating">
+                    <div class="skill-info">
+                        <span class="skill-name">Communication</span>
+                        <span class="skill-score" id="commScore">-/100</span>
+                    </div>
+                    <div class="skill-bar-container">
+                        <div class="skill-bar-fill" id="commBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="skill-rating">
+                    <div class="skill-info">
+                        <span class="skill-name">Decision Making</span>
+                        <span class="skill-score" id="decisionScore">-/100</span>
+                    </div>
+                    <div class="skill-bar-container">
+                        <div class="skill-bar-fill" id="decisionBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="skill-rating">
+                    <div class="skill-info">
+                        <span class="skill-name">Crisis Management</span>
+                        <span class="skill-score" id="crisisScore">-/100</span>
+                    </div>
+                    <div class="skill-bar-container">
+                        <div class="skill-bar-fill" id="crisisBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="skill-rating">
+                    <div class="skill-info">
+                        <span class="skill-name">Team Coordination</span>
+                        <span class="skill-score" id="teamScore">-/100</span>
+                    </div>
+                    <div class="skill-bar-container">
+                        <div class="skill-bar-fill" id="teamBar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Timeline -->
+        <section class="timeline-section">
+            <h2>Surgery Timeline</h2>
+            <div class="timeline" id="timeline">
+                <!-- Timeline items will be inserted here -->
+            </div>
+        </section>
+
+        <!-- Actions -->
+        <section class="actions-section">
+            <div class="actions-buttons">
+                <a href="/dashboard.html" class="btn btn-secondary">Back to Dashboard</a>
+                <a href="/simulator.html" class="btn btn-primary">Start New Training</a>
+            </div>
+        </section>
+    </div>
+
+    <script src="/static/summary.js"></script>
+</body>
+</html>
