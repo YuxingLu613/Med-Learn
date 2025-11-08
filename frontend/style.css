@@ -681,9 +681,9 @@ header h1 {
 
 .input-group input {
     flex: 1;
-    padding: 14px 18px;
+    padding: 12px 16px;
     border: 2px solid #e2e8f0;
-    border-radius: 10px;
+    border-radius: 8px;
     font-size: 0.95rem;
     transition: all 0.2s;
 }
@@ -700,15 +700,17 @@ header h1 {
 }
 
 .btn-send {
-    padding: 14px 28px;
+    padding: 12px 20px;
     background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
     color: white;
     border: none;
-    border-radius: 10px;
-    font-weight: 700;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.3s;
     box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+    min-width: 90px;
 }
 
 .btn-send:hover:not(:disabled) {
