@@ -6,7 +6,7 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0a4d68 0%, #088395 50%, #05bfdb 100%);
     min-height: 100vh;
     padding: 20px;
 }
@@ -86,17 +86,17 @@ header h1 {
 }
 
 .btn-primary {
-    background: #667eea;
+    background: #088395;
     color: white;
 }
 
 .btn-primary:hover {
-    background: #5568d3;
+    background: #0a4d68;
     transform: translateY(-2px);
 }
 
 .btn-secondary {
-    background: #48bb78;
+    background: #00a86b;
     color: white;
     margin-top: 12px;
 }
@@ -114,7 +114,8 @@ header h1 {
 
 /* Status Section */
 .status-section h3,
-.complications-section h3 {
+.complications-section h3,
+.vitals-section h3 {
     color: #333;
     margin-bottom: 16px;
     border-bottom: 2px solid #f0f0f0;
@@ -141,6 +142,49 @@ header h1 {
     font-weight: bold;
     font-size: 1.2rem;
     color: #48bb78;
+}
+
+/* Vitals Monitor */
+.vitals-section {
+    background: #e0f7fa;
+    border: 2px solid #088395;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.vital-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    margin-bottom: 4px;
+    background: white;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+.vital-label {
+    font-weight: bold;
+    color: #0a4d68;
+}
+
+.vital-value {
+    color: #00a86b;
+    font-weight: 600;
+}
+
+.vital-value.warning {
+    color: #ff9800;
+}
+
+.vital-value.critical {
+    color: #f44336;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50%, 100% { opacity: 1; }
+    25%, 75% { opacity: 0.5; }
 }
 
 /* Complications */
@@ -215,14 +259,14 @@ header h1 {
 }
 
 .agent-btn:hover {
-    border-color: #667eea;
-    background: #f7fafc;
+    border-color: #088395;
+    background: #e0f7fa;
     transform: translateX(4px);
 }
 
 .agent-btn.active {
-    border-color: #667eea;
-    background: #eef2ff;
+    border-color: #088395;
+    background: #b2ebf2;
     font-weight: 600;
 }
 
@@ -241,7 +285,7 @@ header h1 {
 
 .selected-agent {
     margin-top: 8px;
-    color: #667eea;
+    color: #088395;
     font-weight: 600;
 }
 
@@ -308,7 +352,7 @@ header h1 {
 }
 
 .message-user .message-bubble {
-    background: #667eea;
+    background: #088395;
     color: white;
 }
 
@@ -364,7 +408,7 @@ header h1 {
 }
 
 #messageInput:focus {
-    border-color: #667eea;
+    border-color: #088395;
 }
 
 #messageInput:disabled {
@@ -374,7 +418,7 @@ header h1 {
 
 .btn-send {
     padding: 12px 24px;
-    background: #667eea;
+    background: #088395;
     color: white;
     border: none;
     border-radius: 24px;
@@ -383,7 +427,7 @@ header h1 {
 }
 
 .btn-send:hover:not(:disabled) {
-    background: #5568d3;
+    background: #0a4d68;
 }
 
 .btn-send:disabled {

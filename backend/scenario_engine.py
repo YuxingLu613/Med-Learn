@@ -42,29 +42,63 @@ class SurgicalScenario:
     """Manages a surgical training scenario."""
 
     COMPLICATIONS = [
+        # Pre-operative complications
+        Complication(
+            "Patient Anxiety",
+            "Patient showing signs of severe anxiety and elevated heart rate.",
+            ComplicationSeverity.MINOR,
+            SurgeryPhase.PRE_OP
+        ),
+        Complication(
+            "Missing Lab Results",
+            "Critical lab results are not available yet.",
+            ComplicationSeverity.MODERATE,
+            SurgeryPhase.PRE_OP
+        ),
+        # Anesthesia complications
+        Complication(
+            "Difficult Intubation",
+            "Having difficulty securing the airway. Multiple attempts needed.",
+            ComplicationSeverity.SEVERE,
+            SurgeryPhase.ANESTHESIA
+        ),
+        Complication(
+            "Allergic Reaction to Anesthesia",
+            "Patient showing signs of allergic reaction - rash developing.",
+            ComplicationSeverity.SEVERE,
+            SurgeryPhase.ANESTHESIA
+        ),
+        Complication(
+            "Blood Pressure Spike",
+            "Patient's blood pressure suddenly increased to 180/110.",
+            ComplicationSeverity.MODERATE,
+            SurgeryPhase.ANESTHESIA
+        ),
+        # Incision phase
+        Complication(
+            "Excessive Subcutaneous Bleeding",
+            "More bleeding than expected during incision.",
+            ComplicationSeverity.MINOR,
+            SurgeryPhase.INCISION
+        ),
+        Complication(
+            "Adhesions Found",
+            "Unexpected adhesions from previous surgery detected.",
+            ComplicationSeverity.MODERATE,
+            SurgeryPhase.INCISION
+        ),
+        # Main procedure complications
         Complication(
             "Unexpected Bleeding",
-            "Patient is experiencing increased bleeding from the surgical site.",
+            "Significant bleeding from surgical site - vessel needs cauterization.",
             ComplicationSeverity.MODERATE,
             SurgeryPhase.PROCEDURE
         ),
         Complication(
             "Blood Pressure Drop",
-            "Patient's blood pressure has dropped to 90/60.",
+            "Patient's blood pressure has dropped to 85/55 - critically low.",
             ComplicationSeverity.SEVERE,
             SurgeryPhase.PROCEDURE
-        ),
-        Complication(
-            "Allergic Reaction",
-            "Patient showing signs of allergic reaction to medication.",
-            ComplicationSeverity.SEVERE,
-            SurgeryPhase.ANESTHESIA
-        ),
-        Complication(
-            "Instrument Count Mismatch",
-            "Surgical instrument count doesn't match pre-op count.",
-            ComplicationSeverity.MODERATE,
-            SurgeryPhase.CLOSING
         ),
         Complication(
             "Oxygen Saturation Drop",
@@ -73,10 +107,48 @@ class SurgicalScenario:
             SurgeryPhase.PROCEDURE
         ),
         Complication(
-            "Difficult Intubation",
-            "Having difficulty securing the airway.",
-            ComplicationSeverity.SEVERE,
-            SurgeryPhase.ANESTHESIA
+            "Arrhythmia Detected",
+            "EKG showing irregular heart rhythm - possible cardiac event.",
+            ComplicationSeverity.CRITICAL,
+            SurgeryPhase.PROCEDURE
+        ),
+        Complication(
+            "Anatomical Variation",
+            "Encountered unexpected anatomical variation.",
+            ComplicationSeverity.MODERATE,
+            SurgeryPhase.PROCEDURE
+        ),
+        Complication(
+            "Equipment Malfunction",
+            "Surgical equipment is malfunctioning - need backup.",
+            ComplicationSeverity.MODERATE,
+            SurgeryPhase.PROCEDURE
+        ),
+        # Closing phase
+        Complication(
+            "Instrument Count Mismatch",
+            "Surgical instrument count doesn't match pre-op count!",
+            ComplicationSeverity.MODERATE,
+            SurgeryPhase.CLOSING
+        ),
+        Complication(
+            "Suture Line Bleeding",
+            "Bleeding from suture line detected.",
+            ComplicationSeverity.MINOR,
+            SurgeryPhase.CLOSING
+        ),
+        # Post-op
+        Complication(
+            "Delayed Emergence",
+            "Patient not waking up as expected from anesthesia.",
+            ComplicationSeverity.MODERATE,
+            SurgeryPhase.POST_OP
+        ),
+        Complication(
+            "Post-op Nausea",
+            "Patient experiencing severe nausea and vomiting.",
+            ComplicationSeverity.MINOR,
+            SurgeryPhase.POST_OP
         ),
     ]
 
@@ -87,8 +159,9 @@ class SurgicalScenario:
         self.resolved_complications: List[Complication] = []
         self.actions_taken: List[str] = []
         self.messages_since_last_complication = 0
-        self.complication_chance = 0.15  # 15% chance per interaction
+        self.complication_chance = 0.25  # 25% chance per interaction
         self.success_score = 100
+        self.interactions_count = 0
 
     def get_current_context(self) -> str:
         """Get current scenario context for agents."""
@@ -115,9 +188,15 @@ class SurgicalScenario:
     def should_trigger_complication(self) -> bool:
         """Determine if a complication should occur."""
         self.messages_since_last_complication += 1
+        self.interactions_count += 1
 
-        # Increase chance over time if no complications
-        adjusted_chance = self.complication_chance * (1 + self.messages_since_last_complication * 0.05)
+        # Increase chance over time if no complications - makes it more likely
+        adjusted_chance = self.complication_chance * (1 + self.messages_since_last_complication * 0.08)
+
+        # Guaranteed complication every 5-7 interactions if none occurred
+        if self.messages_since_last_complication >= random.randint(5, 7):
+            self.messages_since_last_complication = 0
+            return True
 
         if random.random() < adjusted_chance:
             self.messages_since_last_complication = 0

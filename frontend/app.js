@@ -20,6 +20,20 @@ const complicationsList = document.getElementById('complicationsList');
 const selectedAgentDiv = document.getElementById('selectedAgent');
 const completionPanel = document.getElementById('completionPanel');
 const completionResults = document.getElementById('completionResults');
+const vitalsMonitor = document.getElementById('vitalsMonitor');
+const heartRate = document.getElementById('heartRate');
+const bloodPressure = document.getElementById('bloodPressure');
+const oxygenSat = document.getElementById('oxygenSat');
+const temperature = document.getElementById('temperature');
+
+// Vitals state
+let vitalsInterval = null;
+const baseVitals = {
+    hr: 72,
+    bp: {systolic: 120, diastolic: 80},
+    spo2: 98,
+    temp: 37.0
+};
 
 // Event Listeners
 startBtn.addEventListener('click', startScenario);
@@ -62,9 +76,11 @@ async function startScenario() {
         scenarioActive = true;
         scenarioStatus.style.display = 'block';
         complicationsSection.style.display = 'block';
+        vitalsMonitor.style.display = 'block';
         completionPanel.style.display = 'none';
 
         updateStatus(data.status);
+        startVitalsMonitoring();
 
         // Clear chat
         chatMessages.innerHTML = `
@@ -326,6 +342,57 @@ function getAgentName(agentType) {
         'assistant': '👨‍⚕️ Surgical Assistant'
     };
     return names[agentType] || agentType;
+}
+
+// Vitals monitoring functions
+function startVitalsMonitoring() {
+    if (vitalsInterval) {
+        clearInterval(vitalsInterval);
+    }
+
+    // Update vitals every 3 seconds with slight variations
+    vitalsInterval = setInterval(updateVitals, 3000);
+    updateVitals(); // Initial update
+}
+
+function stopVitalsMonitoring() {
+    if (vitalsInterval) {
+        clearInterval(vitalsInterval);
+        vitalsInterval = null;
+    }
+}
+
+function updateVitals() {
+    // Add slight random variations to make it realistic
+    const hr = baseVitals.hr + Math.floor(Math.random() * 6 - 3); // ±3 bpm
+    const systolic = baseVitals.bp.systolic + Math.floor(Math.random() * 10 - 5);
+    const diastolic = baseVitals.bp.diastolic + Math.floor(Math.random() * 6 - 3);
+    const spo2 = Math.min(100, baseVitals.spo2 + Math.floor(Math.random() * 3 - 1));
+    const temp = (baseVitals.temp + (Math.random() * 0.4 - 0.2)).toFixed(1);
+
+    // Update display
+    heartRate.textContent = `${hr} bpm`;
+    bloodPressure.textContent = `${systolic}/${diastolic}`;
+    oxygenSat.textContent = `${spo2}%`;
+    temperature.textContent = `${temp}°C`;
+
+    // Apply warning/critical classes
+    heartRate.className = 'vital-value';
+    bloodPressure.className = 'vital-value';
+    oxygenSat.className = 'vital-value';
+    temperature.className = 'vital-value';
+
+    if (hr < 60 || hr > 100) heartRate.className = 'vital-value warning';
+    if (hr < 50 || hr > 120) heartRate.className = 'vital-value critical';
+
+    if (systolic > 140 || systolic < 100) bloodPressure.className = 'vital-value warning';
+    if (systolic > 160 || systolic < 90) bloodPressure.className = 'vital-value critical';
+
+    if (spo2 < 95) oxygenSat.className = 'vital-value warning';
+    if (spo2 < 92) oxygenSat.className = 'vital-value critical';
+
+    if (temp > 37.5 || temp < 36.5) temperature.className = 'vital-value warning';
+    if (temp > 38.0 || temp < 36.0) temperature.className = 'vital-value critical';
 }
 
 // Make resolveComplication available globally
