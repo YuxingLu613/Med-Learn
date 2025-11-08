@@ -167,6 +167,49 @@ header h1 {
     color: #088395;
 }
 
+/* Phase Advancement Notification */
+.phase-notification {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    border: 2px solid #2e7d32;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 12px;
+    margin-bottom: 12px;
+    text-align: center;
+    animation: slideInAndFade 3s ease-in-out;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.phase-notification-icon {
+    font-size: 1.2rem;
+    margin-right: 8px;
+}
+
+.phase-notification-text {
+    color: white;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+@keyframes slideInAndFade {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    20% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    80% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
 /* Vitals Monitor */
 .vitals-section {
     background: #e0f7fa;

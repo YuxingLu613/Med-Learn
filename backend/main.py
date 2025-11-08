@@ -121,6 +121,11 @@ async def chat_with_agent(request: ChatRequest) -> ChatResponse:
                 "severity": comp.severity.value
             }
 
+    # Check for automatic phase advancement
+    if scenario.check_phase_completion(request.action_id):
+        scenario.advance_phase()
+        scenario.auto_advanced = True
+
     # Check for failure conditions after interaction
     failure_reason = scenario.check_failure()
 

@@ -7,7 +7,6 @@ let scenarioActive = false;
 
 // DOM Elements
 const startBtn = document.getElementById('startBtn');
-const advanceBtn = document.getElementById('advanceBtn');
 const sendBtn = document.getElementById('sendBtn');
 const messageInput = document.getElementById('messageInput');
 const chatMessages = document.getElementById('chatMessages');
@@ -28,6 +27,7 @@ const temperature = document.getElementById('temperature');
 const patientStatus = document.getElementById('patientStatus');
 const actionButtons = document.getElementById('actionButtons');
 const actionButtonsList = document.getElementById('actionButtonsList');
+const phaseAdvanceNotification = document.getElementById('phaseAdvanceNotification');
 
 // Vitals state
 let vitalsInterval = null;
@@ -40,7 +40,6 @@ const baseVitals = {
 
 // Event Listeners
 startBtn.addEventListener('click', startScenario);
-advanceBtn.addEventListener('click', advancePhase);
 sendBtn.addEventListener('click', sendMessage);
 messageInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter' && !sendBtn.disabled) {
@@ -113,36 +112,14 @@ async function startScenario() {
     }
 }
 
-async function advancePhase() {
-    try {
-        advanceBtn.disabled = true;
-        advanceBtn.textContent = 'Advancing...';
+// Function to show phase advancement notification
+function showPhaseAdvanceNotification() {
+    phaseAdvanceNotification.style.display = 'block';
 
-        const response = await fetch(`${API_BASE}/api/scenario/advance`, {
-            method: 'POST'
-        });
-
-        const data = await response.json();
-
-        if (data.completion && data.completion.completed) {
-            // Surgery completed
-            showCompletion(data.completion);
-            scenarioActive = false;
-            messageInput.disabled = true;
-            sendBtn.disabled = true;
-        } else {
-            updateStatus(data.status);
-            addSystemMessage(`Advanced to: ${data.status.phase.replace('_', ' ').toUpperCase()}`);
-        }
-
-        advanceBtn.textContent = 'Advance Phase →';
-        advanceBtn.disabled = false;
-
-    } catch (error) {
-        console.error('Error advancing phase:', error);
-        advanceBtn.textContent = 'Advance Phase →';
-        advanceBtn.disabled = false;
-    }
+    // Auto-hide after 3 seconds (matching the animation duration)
+    setTimeout(() => {
+        phaseAdvanceNotification.style.display = 'none';
+    }, 3000);
 }
 
 async function sendMessage() {
@@ -344,6 +321,12 @@ function showComplicationAlert(complication) {
 function updateStatus(status) {
     currentPhase.textContent = status.phase.replace('_', ' ').toUpperCase();
     successScore.textContent = status.success_score;
+
+    // Check for automatic phase advancement
+    if (status.auto_advanced) {
+        showPhaseAdvanceNotification();
+        addSystemMessage(`✨ Phase automatically advanced to: ${status.phase.replace('_', ' ').toUpperCase()}`);
+    }
 
     // Update patient status
     if (status.patient_status) {

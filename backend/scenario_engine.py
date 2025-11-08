@@ -167,6 +167,11 @@ class SurgicalScenario:
         self.failure_reason = None
         self.patient_status = "Stable"  # Current patient condition
 
+        # Track phase completion
+        self.phase_interactions = 0  # Interactions in current phase
+        self.phase_actions: List[str] = []  # Actions taken in current phase
+        self.auto_advanced = False  # Flag to notify frontend
+
     def get_patient_status_description(self) -> str:
         """Generate a description of current patient status."""
         if self.failed:
@@ -214,13 +219,73 @@ class SurgicalScenario:
 
         if current_index < len(phases) - 1:
             self.current_phase = phases[current_index + 1]
+            # Reset phase tracking
+            self.phase_interactions = 0
+            self.phase_actions = []
             return True
+        return False
+
+    def check_phase_completion(self, action_id: str = None) -> bool:
+        """Check if current phase goals are met and should auto-advance.
+
+        Returns True if phase should advance automatically.
+        """
+        # Track this action
+        if action_id:
+            self.phase_actions.append(action_id)
+
+        # Don't auto-advance if there are active critical/severe complications
+        critical_active = any(
+            c.severity in [ComplicationSeverity.CRITICAL, ComplicationSeverity.SEVERE]
+            for c in self.active_complications
+        )
+        if critical_active:
+            return False
+
+        # Phase-specific completion criteria
+        if self.current_phase == SurgeryPhase.PRE_OP:
+            # Need vitals check + patient assessment (at least 3 interactions)
+            has_vitals = any('vitals' in a for a in self.phase_actions)
+            has_patient_check = any('patient' in a for a in self.phase_actions)
+            return self.phase_interactions >= 3 and (has_vitals or has_patient_check or self.phase_interactions >= 4)
+
+        elif self.current_phase == SurgeryPhase.ANESTHESIA:
+            # Need anesthesia-related actions (at least 2-3 interactions)
+            has_anes_action = any('anes' in a for a in self.phase_actions)
+            has_airway = any('airway' in a for a in self.phase_actions)
+            return (has_anes_action and self.phase_interactions >= 2) or self.phase_interactions >= 4
+
+        elif self.current_phase == SurgeryPhase.INCISION:
+            # Need field management (at least 2 interactions)
+            has_field_action = any('field' in a or 'retract' in a for a in self.phase_actions)
+            has_bleeding_check = any('bleeding' in a or 'cautery' in a for a in self.phase_actions)
+            return (has_field_action and self.phase_interactions >= 2) or self.phase_interactions >= 3
+
+        elif self.current_phase == SurgeryPhase.PROCEDURE:
+            # Main procedure - needs more interactions (at least 4-5)
+            has_assistant_work = any('assist' in a for a in self.phase_actions)
+            has_nursing_support = any('nurse' in a for a in self.phase_actions)
+            return (has_assistant_work and has_nursing_support and self.phase_interactions >= 4) or self.phase_interactions >= 6
+
+        elif self.current_phase == SurgeryPhase.CLOSING:
+            # Need closure actions + count verification
+            has_closure = any('close' in a or 'suture' in a for a in self.phase_actions)
+            has_count = any('count' in a for a in self.phase_actions)
+            return (has_closure and has_count) or self.phase_interactions >= 3
+
+        elif self.current_phase == SurgeryPhase.POST_OP:
+            # Check patient recovery
+            has_consciousness_check = any('conscious' in a for a in self.phase_actions)
+            has_vitals = any('vitals' in a or 'status' in a for a in self.phase_actions)
+            return (has_consciousness_check or has_vitals) and self.phase_interactions >= 2
+
         return False
 
     def should_trigger_complication(self) -> bool:
         """Determine if a complication should occur."""
         self.messages_since_last_complication += 1
         self.interactions_count += 1
+        self.phase_interactions += 1  # Track phase interactions
 
         # Increase chance over time if no complications - makes it more likely
         adjusted_chance = self.complication_chance * (1 + self.messages_since_last_complication * 0.08)
@@ -311,7 +376,7 @@ class SurgicalScenario:
 
     def get_status(self) -> Dict:
         """Get current scenario status."""
-        return {
+        status = {
             "procedure": self.procedure_name,
             "phase": self.current_phase.value,
             "patient_status": self.get_patient_status_description(),
@@ -322,8 +387,13 @@ class SurgicalScenario:
             "success_score": self.success_score,
             "is_completed": self.current_phase == SurgeryPhase.COMPLETED,
             "failed": self.failed,
-            "failure_reason": self.failure_reason
+            "failure_reason": self.failure_reason,
+            "auto_advanced": self.auto_advanced
         }
+
+        # Reset auto_advanced flag after reading
+        self.auto_advanced = False
+        return status
 
     def check_completion(self) -> Dict:
         """Check if surgery is complete and return results."""
