@@ -171,6 +171,16 @@ async function sendMessage() {
         // Add agent response
         addMessage('agent', data.response, getAgentName(currentAgent));
 
+        // Check for failure
+        if (data.failed) {
+            showFailure(data.failure_reason);
+            scenarioActive = false;
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            stopVitalsMonitoring();
+            return;
+        }
+
         // Check for complications
         if (data.complication) {
             showComplicationAlert(data.complication);
@@ -182,9 +192,11 @@ async function sendMessage() {
         console.error('Error sending message:', error);
         addSystemMessage('Error: Failed to communicate with agent.');
     } finally {
-        messageInput.disabled = false;
-        sendBtn.disabled = false;
-        messageInput.focus();
+        if (scenarioActive) {
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            messageInput.focus();
+        }
     }
 }
 
@@ -332,6 +344,42 @@ function showCompletion(completion) {
     `;
 
     addSystemMessage(`Surgery completed with score: ${completion.score}/100`);
+}
+
+function showFailure(reason) {
+    completionPanel.style.display = 'block';
+    completionPanel.style.background = '#fee';
+    completionPanel.style.borderColor = '#f44336';
+
+    completionResults.innerHTML = `
+        <div class="completion-result">
+            <h4 style="color: #c62828;">❌ SURGERY FAILED</h4>
+        </div>
+        <div class="completion-result">
+            <strong>Reason:</strong> ${reason}
+        </div>
+        <div class="completion-result">
+            <strong>Final Score:</strong> 0/100
+        </div>
+        <div class="completion-result" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #ccc; color: #c62828;">
+            Critical mistakes led to surgery failure. Review the procedure and try again.
+        </div>
+    `;
+
+    // Show dramatic failure message in chat
+    const failureDiv = document.createElement('div');
+    failureDiv.className = 'complication-alert';
+    failureDiv.style.background = '#ffebee';
+    failureDiv.style.borderColor = '#f44336';
+
+    failureDiv.innerHTML = `
+        <h4 style="color: #c62828;">🚨 SURGERY FAILED</h4>
+        <strong>${reason}</strong>
+        <p style="margin-top: 8px;">The surgery has been terminated.</p>
+    `;
+
+    chatMessages.appendChild(failureDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 function getAgentName(agentType) {

@@ -36,6 +36,7 @@ class Complication:
     severity: ComplicationSeverity
     phase: SurgeryPhase
     resolved: bool = False
+    triggered_at_interaction: int = 0  # Track when it was triggered
 
 
 class SurgicalScenario:
@@ -162,6 +163,8 @@ class SurgicalScenario:
         self.complication_chance = 0.25  # 25% chance per interaction
         self.success_score = 100
         self.interactions_count = 0
+        self.failed = False
+        self.failure_reason = None
 
     def get_current_context(self) -> str:
         """Get current scenario context for agents."""
@@ -213,6 +216,7 @@ class SurgicalScenario:
 
         if applicable:
             complication = random.choice(applicable)
+            complication.triggered_at_interaction = self.interactions_count
             self.active_complications.append(complication)
             self.success_score -= 10  # Penalty for complication occurring
             return complication
@@ -231,6 +235,51 @@ class SurgicalScenario:
                 return True
         return False
 
+    def check_failure(self) -> Optional[str]:
+        """Check if surgery has failed due to critical mistakes.
+
+        Returns failure reason if failed, None otherwise.
+        """
+        if self.failed:
+            return self.failure_reason
+
+        # Check for critical complications unresolved for too long
+        for comp in self.active_complications:
+            interactions_since_triggered = self.interactions_count - comp.triggered_at_interaction
+
+            # Critical complications must be addressed within 3 interactions
+            if comp.severity == ComplicationSeverity.CRITICAL and interactions_since_triggered > 3:
+                self.failed = True
+                self.failure_reason = f"Patient died: {comp.name} not addressed in time"
+                self.success_score = 0
+                return self.failure_reason
+
+            # Severe complications must be addressed within 5 interactions
+            if comp.severity == ComplicationSeverity.SEVERE and interactions_since_triggered > 5:
+                self.failed = True
+                self.failure_reason = f"Patient critical condition: {comp.name} ignored for too long"
+                self.success_score = 0
+                return self.failure_reason
+
+        # Check for too many active complications (overwhelmed)
+        if len(self.active_complications) >= 4:
+            critical_count = sum(1 for c in self.active_complications
+                               if c.severity in [ComplicationSeverity.CRITICAL, ComplicationSeverity.SEVERE])
+            if critical_count >= 2:
+                self.failed = True
+                self.failure_reason = "Patient condition deteriorated - multiple critical complications"
+                self.success_score = 0
+                return self.failure_reason
+
+        # Check for very low score during procedure
+        if self.success_score <= 20 and self.current_phase in [SurgeryPhase.PROCEDURE, SurgeryPhase.CLOSING]:
+            self.failed = True
+            self.failure_reason = "Surgery aborted due to excessive complications"
+            self.success_score = 0
+            return self.failure_reason
+
+        return None
+
     def get_status(self) -> Dict:
         """Get current scenario status."""
         return {
@@ -241,7 +290,9 @@ class SurgicalScenario:
                 for c in self.active_complications
             ],
             "success_score": self.success_score,
-            "is_completed": self.current_phase == SurgeryPhase.COMPLETED
+            "is_completed": self.current_phase == SurgeryPhase.COMPLETED,
+            "failed": self.failed,
+            "failure_reason": self.failure_reason
         }
 
     def check_completion(self) -> Dict:

@@ -51,6 +51,8 @@ class ChatResponse(BaseModel):
     agent: str
     response: str
     complication: Optional[dict] = None
+    failed: bool = False
+    failure_reason: Optional[str] = None
 
 
 # API Endpoints
@@ -107,10 +109,15 @@ async def chat_with_agent(request: ChatRequest) -> ChatResponse:
                 "severity": comp.severity.value
             }
 
+    # Check for failure conditions after interaction
+    failure_reason = scenario.check_failure()
+
     return ChatResponse(
         agent=request.agent_type,
         response=response,
-        complication=complication
+        complication=complication,
+        failed=scenario.failed,
+        failure_reason=failure_reason
     )
 
 
