@@ -39,6 +39,10 @@
                             <span class="label">Score:</span>
                             <span id="successScore" class="value score">100</span>
                         </div>
+                        <div class="patient-status-card">
+                            <div class="patient-status-label">Patient Status:</div>
+                            <div id="patientStatus" class="patient-status-value">Stable</div>
+                        </div>
 
                         <button id="advanceBtn" class="btn btn-secondary">Advance Phase →</button>
                     </div>
@@ -107,11 +111,16 @@
                     </div>
 
                     <div class="chat-input-section">
+                        <div id="actionButtons" class="action-buttons-container" style="display:none;">
+                            <div class="actions-label">Quick Actions:</div>
+                            <div id="actionButtonsList" class="action-buttons"></div>
+                        </div>
+
                         <div class="input-group">
                             <input
                                 type="text"
                                 id="messageInput"
-                                placeholder="Type your message to the selected team member..."
+                                placeholder="Type custom message or use quick actions above..."
                                 disabled
                             />
                             <button id="sendBtn" class="btn btn-send" disabled>Send</button>

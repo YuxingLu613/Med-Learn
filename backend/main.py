@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 
 from agents import AgentOrchestrator
 from scenario_engine import SurgicalScenario
+from actions import get_actions_for_role, get_action_prompt
 
 # Load environment variables
 load_dotenv()
@@ -40,7 +41,8 @@ class StartScenarioRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     agent_type: str
-    message: str
+    message: Optional[str] = None
+    action_id: Optional[str] = None  # For structured actions
 
 
 class ActionRequest(BaseModel):
@@ -94,9 +96,19 @@ async def chat_with_agent(request: ChatRequest) -> ChatResponse:
     if not agent:
         raise HTTPException(status_code=404, detail=f"Agent '{request.agent_type}' not found")
 
+    # Determine the message to send
+    if request.action_id:
+        # Use structured action
+        user_message = get_action_prompt(request.action_id)
+    elif request.message:
+        # Use free-form message
+        user_message = request.message
+    else:
+        raise HTTPException(status_code=400, detail="Either message or action_id must be provided")
+
     # Get agent response
     context = scenario.get_current_context()
-    response = agent.respond(request.message, context)
+    response = agent.respond(user_message, context)
 
     # Check if we should trigger a complication
     complication = None
@@ -176,6 +188,16 @@ async def get_agents():
             for agent_type in agents
         ]
     }
+
+
+@app.get("/api/actions/{agent_type}")
+async def get_agent_actions(agent_type: str):
+    """Get available actions for a specific agent type."""
+    actions = get_actions_for_role(agent_type)
+    if not actions:
+        raise HTTPException(status_code=404, detail=f"No actions found for agent type '{agent_type}'")
+
+    return {"actions": actions}
 
 
 # Serve static files

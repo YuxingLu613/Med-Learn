@@ -165,6 +165,35 @@ class SurgicalScenario:
         self.interactions_count = 0
         self.failed = False
         self.failure_reason = None
+        self.patient_status = "Stable"  # Current patient condition
+
+    def get_patient_status_description(self) -> str:
+        """Generate a description of current patient status."""
+        if self.failed:
+            return "Critical - Surgery Failed"
+
+        # Base status on complications and score
+        critical_comps = [c for c in self.active_complications
+                         if c.severity == ComplicationSeverity.CRITICAL]
+        severe_comps = [c for c in self.active_complications
+                       if c.severity == ComplicationSeverity.SEVERE]
+
+        if critical_comps:
+            status = f"CRITICAL - {critical_comps[0].name} requires immediate attention!"
+        elif severe_comps:
+            status = f"Unstable - {severe_comps[0].name} needs urgent care"
+        elif len(self.active_complications) >= 2:
+            status = "Moderately Unstable - Multiple complications active"
+        elif len(self.active_complications) == 1:
+            status = f"Fair - Managing {self.active_complications[0].name}"
+        elif self.success_score >= 90:
+            status = "Stable - Procedure progressing well"
+        elif self.success_score >= 70:
+            status = "Stable - Minor issues managed"
+        else:
+            status = "Guarded - Multiple issues encountered"
+
+        return status
 
     def get_current_context(self) -> str:
         """Get current scenario context for agents."""
@@ -285,6 +314,7 @@ class SurgicalScenario:
         return {
             "procedure": self.procedure_name,
             "phase": self.current_phase.value,
+            "patient_status": self.get_patient_status_description(),
             "active_complications": [
                 {"name": c.name, "description": c.description, "severity": c.severity.value}
                 for c in self.active_complications

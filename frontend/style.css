@@ -144,6 +144,29 @@ header h1 {
     color: #48bb78;
 }
 
+/* Patient Status Card */
+.patient-status-card {
+    background: #f0f9ff;
+    border: 2px solid #088395;
+    border-radius: 6px;
+    padding: 12px;
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+.patient-status-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #0a4d68;
+    margin-bottom: 6px;
+}
+
+.patient-status-value {
+    font-weight: bold;
+    font-size: 1.05rem;
+    color: #088395;
+}
+
 /* Vitals Monitor */
 .vitals-section {
     background: #e0f7fa;
@@ -432,6 +455,48 @@ header h1 {
 
 .btn-send:disabled {
     background: #ccc;
+    cursor: not-allowed;
+}
+
+/* Action Buttons */
+.action-buttons-container {
+    margin-bottom: 12px;
+}
+
+.actions-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.action-btn {
+    padding: 8px 14px;
+    background: white;
+    border: 2px solid #088395;
+    color: #088395;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.action-btn:hover:not(:disabled) {
+    background: #088395;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.action-btn:disabled {
+    border-color: #ccc;
+    color: #ccc;
     cursor: not-allowed;
 }
 

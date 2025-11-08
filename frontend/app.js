@@ -25,6 +25,9 @@ const heartRate = document.getElementById('heartRate');
 const bloodPressure = document.getElementById('bloodPressure');
 const oxygenSat = document.getElementById('oxygenSat');
 const temperature = document.getElementById('temperature');
+const patientStatus = document.getElementById('patientStatus');
+const actionButtons = document.getElementById('actionButtons');
+const actionButtonsList = document.getElementById('actionButtonsList');
 
 // Vitals state
 let vitalsInterval = null;
@@ -200,7 +203,7 @@ async function sendMessage() {
     }
 }
 
-function selectAgent(agentType) {
+async function selectAgent(agentType) {
     currentAgent = agentType;
     selectedAgentDiv.textContent = `Communicating with: ${getAgentName(agentType)}`;
 
@@ -208,6 +211,88 @@ function selectAgent(agentType) {
         messageInput.disabled = false;
         sendBtn.disabled = false;
         messageInput.focus();
+
+        // Load actions for this agent
+        await loadActionsForAgent(agentType);
+    }
+}
+
+async function loadActionsForAgent(agentType) {
+    try {
+        const response = await fetch(`${API_BASE}/api/actions/${agentType}`);
+        const data = await response.json();
+
+        // Display action buttons
+        actionButtonsList.innerHTML = '';
+        data.actions.forEach(action => {
+            const btn = document.createElement('button');
+            btn.className = 'action-btn';
+            btn.textContent = action.label;
+            btn.title = action.description;
+            btn.onclick = () => sendAction(action.id, action.label);
+            actionButtonsList.appendChild(btn);
+        });
+
+        actionButtons.style.display = 'block';
+    } catch (error) {
+        console.error('Error loading actions:', error);
+        actionButtons.style.display = 'none';
+    }
+}
+
+async function sendAction(actionId, actionLabel) {
+    if (!currentAgent || !scenarioActive) return;
+
+    // Add action to chat as user message
+    addMessage('user', `[Action: ${actionLabel}]`, 'You');
+
+    // Disable buttons temporarily
+    const buttons = actionButtonsList.querySelectorAll('.action-btn');
+    buttons.forEach(btn => btn.disabled = true);
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+
+    try {
+        const response = await fetch(`${API_BASE}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                agent_type: currentAgent,
+                action_id: actionId
+            })
+        });
+
+        const data = await response.json();
+
+        // Add agent response
+        addMessage('agent', data.response, getAgentName(currentAgent));
+
+        // Check for failure
+        if (data.failed) {
+            showFailure(data.failure_reason);
+            scenarioActive = false;
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            actionButtons.style.display = 'none';
+            stopVitalsMonitoring();
+            return;
+        }
+
+        // Check for complications
+        if (data.complication) {
+            showComplicationAlert(data.complication);
+            await refreshStatus();
+        }
+
+    } catch (error) {
+        console.error('Error sending action:', error);
+        addSystemMessage('Error: Failed to execute action.');
+    } finally {
+        if (scenarioActive) {
+            buttons.forEach(btn => btn.disabled = false);
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+        }
     }
 }
 
@@ -259,6 +344,25 @@ function showComplicationAlert(complication) {
 function updateStatus(status) {
     currentPhase.textContent = status.phase.replace('_', ' ').toUpperCase();
     successScore.textContent = status.success_score;
+
+    // Update patient status
+    if (status.patient_status) {
+        patientStatus.textContent = status.patient_status;
+
+        // Color code based on status
+        if (status.patient_status.includes('CRITICAL') || status.patient_status.includes('Failed')) {
+            patientStatus.style.color = '#c62828';
+            patientStatus.style.fontWeight = 'bold';
+        } else if (status.patient_status.includes('Unstable') || status.patient_status.includes('Guarded')) {
+            patientStatus.style.color = '#f57c00';
+            patientStatus.style.fontWeight = 'bold';
+        } else if (status.patient_status.includes('Fair')) {
+            patientStatus.style.color = '#fbc02d';
+        } else {
+            patientStatus.style.color = '#088395';
+            patientStatus.style.fontWeight = 'normal';
+        }
+    }
 
     // Update score color
     if (status.success_score >= 70) {
