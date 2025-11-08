@@ -6,7 +6,7 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
     background-attachment: fixed;
     min-height: 100vh;
     padding: 20px;
@@ -113,8 +113,8 @@ header h1 {
 
 .scenario-setup select:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: #27ae60;
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
 }
 
 /* Buttons */
@@ -131,13 +131,13 @@ header h1 {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
     color: white;
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
 }
 
 .btn-primary:active {
@@ -196,7 +196,7 @@ header h1 {
 .status-item .score {
     font-weight: bold;
     font-size: 1.5rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -439,17 +439,17 @@ header h1 {
 
 /* Inline Team Selection */
 .team-selection-inline {
-    background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%);
-    border: 2px solid #5c6bc0;
+    background: linear-gradient(135deg, #ecf0f1 0%, #d5dbdb 100%);
+    border: 2px solid #7f8c8d;
     border-radius: 10px;
     padding: 12px 16px;
     margin-bottom: 16px;
-    box-shadow: 0 1px 4px rgba(92, 107, 192, 0.15);
+    box-shadow: 0 1px 4px rgba(127, 140, 141, 0.15);
 }
 
 .team-label {
     font-weight: 600;
-    color: #3949ab;
+    color: #2c3e50;
     margin-bottom: 10px;
     font-size: 0.8rem;
     text-transform: uppercase;
@@ -469,7 +469,7 @@ header h1 {
     justify-content: center;
     padding: 10px 6px;
     background: white;
-    border: 2px solid #9fa8da;
+    border: 2px solid #95a5a6;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -479,10 +479,10 @@ header h1 {
 }
 
 .team-btn:hover {
-    background: linear-gradient(135deg, #5c6bc0 0%, #3949ab 100%);
-    border-color: #5c6bc0;
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    border-color: #27ae60;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(92, 107, 192, 0.3);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
 }
 
 .team-btn:hover .team-icon {
@@ -494,9 +494,9 @@ header h1 {
 }
 
 .team-btn.active {
-    background: linear-gradient(135deg, #5c6bc0 0%, #3949ab 100%);
-    border-color: #3949ab;
-    box-shadow: 0 4px 12px rgba(92, 107, 192, 0.35);
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    border-color: #229954;
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.35);
 }
 
 .team-btn.active .team-name {
@@ -511,7 +511,7 @@ header h1 {
 }
 
 .team-name {
-    color: #3949ab;
+    color: #2c3e50;
     font-size: 0.75rem;
     transition: color 0.2s ease;
 }
@@ -587,10 +587,10 @@ header h1 {
 }
 
 .message-user .message-bubble {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
     color: white;
     margin-left: auto;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
 }
 
 .message-agent .message-bubble {
@@ -617,8 +617,8 @@ header h1 {
 
 /* Action Buttons */
 .action-buttons-container {
-    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-    border: 2px solid #2196f3;
+    background: linear-gradient(135deg, #d5f4e6 0%, #a9dfbf 100%);
+    border: 2px solid #27ae60;
     border-radius: 10px;
     padding: 12px 14px;
     margin-bottom: 14px;
@@ -626,7 +626,7 @@ header h1 {
 
 .actions-label {
     font-weight: 700;
-    color: #0d47a1;
+    color: #1e8449;
     margin-bottom: 10px;
     font-size: 0.8rem;
     text-transform: uppercase;
@@ -642,8 +642,8 @@ header h1 {
 .action-btn {
     padding: 10px 14px;
     background: white;
-    border: 2px solid #64b5f6;
-    color: #1565c0;
+    border: 2px solid #52be80;
+    color: #1e8449;
     border-radius: 8px;
     cursor: pointer;
     font-size: 0.875rem;
@@ -653,11 +653,11 @@ header h1 {
 }
 
 .action-btn:hover {
-    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
     color: white;
-    border-color: #1976d2;
+    border-color: #229954;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
 }
 
 .action-btn:disabled {
@@ -690,8 +690,8 @@ header h1 {
 
 .input-group input:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: #27ae60;
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
 }
 
 .input-group input:disabled {
@@ -701,19 +701,19 @@ header h1 {
 
 .btn-send {
     padding: 14px 28px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
     color: white;
     border: none;
     border-radius: 10px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
 }
 
 .btn-send:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
 }
 
 .btn-send:active {
