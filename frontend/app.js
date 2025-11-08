@@ -31,6 +31,7 @@ const teamSelection = document.getElementById('teamSelection');
 
 // Vitals state
 let vitalsInterval = null;
+let lastVitalsParsedTime = 0; // Track when vitals were last parsed from conversation
 const baseVitals = {
     hr: 72,
     bp: {systolic: 120, diastolic: 80},
@@ -151,6 +152,9 @@ async function sendMessage() {
         // Add agent response
         addMessage('agent', data.response, getAgentName(currentAgent));
 
+        // Parse and update vitals from response
+        parseVitalsFromText(data.response);
+
         // Check for failure
         if (data.failed) {
             showFailure(data.failure_reason);
@@ -245,6 +249,9 @@ async function sendAction(actionId, actionLabel) {
 
         // Add agent response
         addMessage('agent', data.response, getAgentName(currentAgent));
+
+        // Parse and update vitals from response
+        parseVitalsFromText(data.response);
 
         // Check for failure
         if (data.failed) {
@@ -485,14 +492,113 @@ function getAgentName(agentType) {
     return names[agentType] || agentType;
 }
 
+// Parse vital signs from agent response text
+function parseVitalsFromText(text) {
+    let updated = false;
+
+    // Heart Rate patterns: "HR 110", "heart rate 110", "HR: 110 bpm", "pulse 110"
+    const hrPatterns = [
+        /\bHR[:\s]+(\d{2,3})/i,
+        /\bheart rate[:\s]+(\d{2,3})/i,
+        /\bpulse[:\s]+(\d{2,3})/i,
+        /\bHR\s+(?:is\s+)?(\d{2,3})/i
+    ];
+
+    for (const pattern of hrPatterns) {
+        const match = text.match(pattern);
+        if (match) {
+            const hr = parseInt(match[1]);
+            if (hr >= 40 && hr <= 200) {
+                baseVitals.hr = hr;
+                updated = true;
+                break;
+            }
+        }
+    }
+
+    // Blood Pressure patterns: "BP 140/90", "blood pressure 120/80", "BP: 140/90"
+    const bpPatterns = [
+        /\bBP[:\s]+(\d{2,3})\/(\d{2,3})/i,
+        /\bblood pressure[:\s]+(\d{2,3})\/(\d{2,3})/i,
+        /\bBP\s+(?:is\s+)?(\d{2,3})\/(\d{2,3})/i
+    ];
+
+    for (const pattern of bpPatterns) {
+        const match = text.match(pattern);
+        if (match) {
+            const systolic = parseInt(match[1]);
+            const diastolic = parseInt(match[2]);
+            if (systolic >= 60 && systolic <= 250 && diastolic >= 30 && diastolic <= 150) {
+                baseVitals.bp.systolic = systolic;
+                baseVitals.bp.diastolic = diastolic;
+                updated = true;
+                break;
+            }
+        }
+    }
+
+    // Oxygen Saturation patterns: "SpO2 95%", "O2 sat 98%", "oxygen saturation 92%"
+    const spo2Patterns = [
+        /\bSpO2[:\s]+(\d{1,3})%?/i,
+        /\bO2 sat[:\s]+(\d{1,3})%?/i,
+        /\boxygen saturation[:\s]+(\d{1,3})%?/i,
+        /\bSpO2\s+(?:is\s+)?(\d{1,3})%?/i
+    ];
+
+    for (const pattern of spo2Patterns) {
+        const match = text.match(pattern);
+        if (match) {
+            const spo2 = parseInt(match[1]);
+            if (spo2 >= 50 && spo2 <= 100) {
+                baseVitals.spo2 = spo2;
+                updated = true;
+                break;
+            }
+        }
+    }
+
+    // Temperature patterns: "temp 38.5", "temperature 37.0°C", "temp: 39.2"
+    const tempPatterns = [
+        /\btemp(?:erature)?[:\s]+(\d{2,3}(?:\.\d{1,2})?)(?:°C)?/i,
+        /\btemp\s+(?:is\s+)?(\d{2,3}(?:\.\d{1,2})?)(?:°C)?/i
+    ];
+
+    for (const pattern of tempPatterns) {
+        const match = text.match(pattern);
+        if (match) {
+            const temp = parseFloat(match[1]);
+            if (temp >= 30 && temp <= 45) {
+                baseVitals.temp = temp;
+                updated = true;
+                break;
+            }
+        }
+    }
+
+    // If any vitals were updated, refresh the display and track the time
+    if (updated) {
+        lastVitalsParsedTime = Date.now();
+        updateVitals();
+    }
+
+    return updated;
+}
+
 // Adjust vitals based on active complications
 function adjustVitalsForComplications(complications) {
-    // Reset to normal baseline
-    baseVitals.hr = 72;
-    baseVitals.bp.systolic = 120;
-    baseVitals.bp.diastolic = 80;
-    baseVitals.spo2 = 98;
-    baseVitals.temp = 37.0;
+    // Don't reset to baseline if vitals were recently parsed from conversation
+    // (within last 5 seconds) - this preserves conversation-mentioned vitals
+    const timeSinceLastParse = Date.now() - lastVitalsParsedTime;
+    const shouldReset = timeSinceLastParse > 5000; // 5 seconds
+
+    // Only reset to normal baseline if no recent conversation vitals
+    if (shouldReset && complications.length === 0) {
+        baseVitals.hr = 72;
+        baseVitals.bp.systolic = 120;
+        baseVitals.bp.diastolic = 80;
+        baseVitals.spo2 = 98;
+        baseVitals.temp = 37.0;
+    }
 
     // Apply modifications based on each active complication
     complications.forEach(comp => {
