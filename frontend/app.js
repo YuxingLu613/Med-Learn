@@ -16,7 +16,6 @@ const currentPhase = document.getElementById('currentPhase');
 const successScore = document.getElementById('successScore');
 const complicationsSection = document.getElementById('complications');
 const complicationsList = document.getElementById('complicationsList');
-const selectedAgentDiv = document.getElementById('selectedAgent');
 const completionPanel = document.getElementById('completionPanel');
 const completionResults = document.getElementById('completionResults');
 const vitalsMonitor = document.getElementById('vitalsMonitor');
@@ -28,6 +27,7 @@ const patientStatus = document.getElementById('patientStatus');
 const actionButtons = document.getElementById('actionButtons');
 const actionButtonsList = document.getElementById('actionButtonsList');
 const phaseAdvanceNotification = document.getElementById('phaseAdvanceNotification');
+const teamSelection = document.getElementById('teamSelection');
 
 // Vitals state
 let vitalsInterval = null;
@@ -47,14 +47,14 @@ messageInput.addEventListener('keypress', (e) => {
     }
 });
 
-// Agent selection
-document.querySelectorAll('.agent-btn').forEach(btn => {
+// Team member selection - inline in conversation
+document.querySelectorAll('.team-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const agentType = btn.dataset.agent;
         selectAgent(agentType);
 
-        // Update UI
-        document.querySelectorAll('.agent-btn').forEach(b => b.classList.remove('active'));
+        // Update UI - highlight selected team member
+        document.querySelectorAll('.team-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
     });
 });
@@ -80,29 +80,29 @@ async function startScenario() {
         complicationsSection.style.display = 'block';
         vitalsMonitor.style.display = 'block';
         completionPanel.style.display = 'none';
+        teamSelection.style.display = 'block'; // Show team selection
 
         updateStatus(data.status);
         startVitalsMonitoring();
 
-        // Clear chat
+        // Clear chat and reset team selection
         chatMessages.innerHTML = `
             <div class="message message-agent">
                 <div class="message-bubble">
                     <div class="message-header">System</div>
                     <strong>Surgery Started: ${procedure}</strong><br>
-                    The team is ready. Select a team member and begin communicating.
+                    The team is ready. Select a team member above to begin communicating.
                 </div>
             </div>
         `;
 
+        // Reset team selection
+        document.querySelectorAll('.team-btn').forEach(b => b.classList.remove('active'));
+        currentAgent = null;
+        actionButtons.style.display = 'none';
+
         startBtn.textContent = 'Restart Surgery';
         startBtn.disabled = false;
-
-        // Enable input if agent selected
-        if (currentAgent) {
-            messageInput.disabled = false;
-            sendBtn.disabled = false;
-        }
 
     } catch (error) {
         console.error('Error starting scenario:', error);
@@ -182,7 +182,6 @@ async function sendMessage() {
 
 async function selectAgent(agentType) {
     currentAgent = agentType;
-    selectedAgentDiv.textContent = `Communicating with: ${getAgentName(agentType)}`;
 
     if (scenarioActive) {
         messageInput.disabled = false;
@@ -191,6 +190,9 @@ async function selectAgent(agentType) {
 
         // Load actions for this agent
         await loadActionsForAgent(agentType);
+
+        // Add visual feedback in chat
+        addSystemMessage(`Now communicating with: ${getAgentName(agentType)}`);
     }
 }
 

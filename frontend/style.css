@@ -355,6 +355,77 @@ header h1 {
     font-weight: 600;
 }
 
+/* Inline Team Selection */
+.team-selection-inline {
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+    border: 2px solid #088395;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.team-label {
+    font-weight: 600;
+    color: #0a4d68;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+}
+
+.team-buttons-inline {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.team-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 12px;
+    background: white;
+    border: 2px solid #088395;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-weight: 500;
+}
+
+.team-btn:hover {
+    background: #088395;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(8, 131, 149, 0.3);
+}
+
+.team-btn:hover .team-icon {
+    transform: scale(1.15);
+}
+
+.team-btn:hover .team-name {
+    color: white;
+}
+
+.team-btn.active {
+    background: #088395;
+    box-shadow: 0 4px 12px rgba(8, 131, 149, 0.4);
+}
+
+.team-btn.active .team-name {
+    color: white;
+    font-weight: 600;
+}
+
+.team-icon {
+    font-size: 2rem;
+    margin-bottom: 6px;
+    transition: transform 0.25s ease;
+}
+
+.team-name {
+    color: #0a4d68;
+    font-size: 0.9rem;
+    transition: color 0.25s ease;
+}
+
 .chat-messages {
     flex: 1;
     overflow-y: auto;

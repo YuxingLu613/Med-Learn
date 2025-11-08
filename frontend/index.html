@@ -22,9 +22,30 @@
                     <div class="scenario-setup">
                         <label for="procedure">Procedure:</label>
                         <select id="procedure">
-                            <option value="Appendectomy">Appendectomy</option>
-                            <option value="Cholecystectomy">Cholecystectomy</option>
-                            <option value="Hernia Repair">Hernia Repair</option>
+                            <optgroup label="General Surgery">
+                                <option value="Appendectomy">Appendectomy</option>
+                                <option value="Cholecystectomy">Cholecystectomy (Gallbladder Removal)</option>
+                                <option value="Hernia Repair">Hernia Repair</option>
+                                <option value="Bowel Resection">Bowel Resection</option>
+                                <option value="Mastectomy">Mastectomy</option>
+                            </optgroup>
+                            <optgroup label="Orthopedic Surgery">
+                                <option value="Hip Replacement">Hip Replacement</option>
+                                <option value="Knee Arthroscopy">Knee Arthroscopy</option>
+                                <option value="Spinal Fusion">Spinal Fusion</option>
+                                <option value="Fracture Fixation">Fracture Fixation</option>
+                            </optgroup>
+                            <optgroup label="Cardiovascular">
+                                <option value="Coronary Artery Bypass">Coronary Artery Bypass (CABG)</option>
+                                <option value="Valve Replacement">Heart Valve Replacement</option>
+                                <option value="Pacemaker Insertion">Pacemaker Insertion</option>
+                            </optgroup>
+                            <optgroup label="Other Specialties">
+                                <option value="Thyroidectomy">Thyroidectomy</option>
+                                <option value="Nephrectomy">Nephrectomy (Kidney Removal)</option>
+                                <option value="Hysterectomy">Hysterectomy</option>
+                                <option value="Cesarean Section">Cesarean Section</option>
+                            </optgroup>
                         </select>
                         <button id="startBtn" class="btn btn-primary">Start Surgery</button>
                     </div>
@@ -80,16 +101,6 @@
                         <div id="completionResults"></div>
                     </div>
                 </div>
-
-                <div class="card agents-card">
-                    <h3>👥 Team Members</h3>
-                    <div class="agent-buttons">
-                        <button class="agent-btn" data-agent="nurse">👩‍⚕️ Nurse</button>
-                        <button class="agent-btn" data-agent="anesthetist">💉 Anesthetist</button>
-                        <button class="agent-btn" data-agent="patient">🛏️ Patient</button>
-                        <button class="agent-btn" data-agent="assistant">👨‍⚕️ Assistant</button>
-                    </div>
-                </div>
             </aside>
 
             <!-- Chat Interface -->
@@ -97,7 +108,29 @@
                 <div class="card chat-card">
                     <div class="chat-header">
                         <h2>💬 Operating Room Communication</h2>
-                        <div id="selectedAgent" class="selected-agent">Select a team member to communicate</div>
+                    </div>
+
+                    <!-- Team Member Selection - Integrated into conversation -->
+                    <div id="teamSelection" class="team-selection-inline" style="display:none;">
+                        <div class="team-label">Select team member(s) to communicate with:</div>
+                        <div class="team-buttons-inline">
+                            <button class="team-btn" data-agent="nurse">
+                                <span class="team-icon">👩‍⚕️</span>
+                                <span class="team-name">Nurse</span>
+                            </button>
+                            <button class="team-btn" data-agent="anesthetist">
+                                <span class="team-icon">💉</span>
+                                <span class="team-name">Anesthetist</span>
+                            </button>
+                            <button class="team-btn" data-agent="patient">
+                                <span class="team-icon">🛏️</span>
+                                <span class="team-name">Patient</span>
+                            </button>
+                            <button class="team-btn" data-agent="assistant">
+                                <span class="team-icon">👨‍⚕️</span>
+                                <span class="team-name">Assistant</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div id="chatMessages" class="chat-messages">
