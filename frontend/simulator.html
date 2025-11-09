@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Surgical Simulator - MedLearn</title>
     <link rel="stylesheet" href="/static/shared.css">
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/simulator.css">
 </head>
 <body>
     <!-- Navigation -->
@@ -23,122 +23,152 @@
         </div>
     </nav>
 
-    <div class="container">
-        <header>
-            <h1>🏥 Surgical Training Simulator</h1>
-            <p class="subtitle">Multi-Agent System for Clinical Practice</p>
-        </header>
+    <div class="simulator-container">
+        <!-- Top Control Bar -->
+        <div class="top-control-bar">
+            <div class="procedure-selector">
+                <label for="procedure">Select Procedure:</label>
+                <select id="procedure">
+                    <optgroup label="General Surgery">
+                        <option value="Appendectomy">Appendectomy</option>
+                        <option value="Cholecystectomy">Cholecystectomy (Gallbladder Removal)</option>
+                        <option value="Hernia Repair">Hernia Repair</option>
+                        <option value="Bowel Resection">Bowel Resection</option>
+                        <option value="Mastectomy">Mastectomy</option>
+                    </optgroup>
+                    <optgroup label="Orthopedic Surgery">
+                        <option value="Hip Replacement">Hip Replacement</option>
+                        <option value="Knee Arthroscopy">Knee Arthroscopy</option>
+                        <option value="Spinal Fusion">Spinal Fusion</option>
+                        <option value="Fracture Fixation">Fracture Fixation</option>
+                    </optgroup>
+                    <optgroup label="Cardiovascular">
+                        <option value="Coronary Artery Bypass">Coronary Artery Bypass (CABG)</option>
+                        <option value="Valve Replacement">Heart Valve Replacement</option>
+                        <option value="Pacemaker Insertion">Pacemaker Insertion</option>
+                    </optgroup>
+                    <optgroup label="Dental Surgery">
+                        <option value="Wisdom Tooth Extraction">Wisdom Tooth Extraction</option>
+                        <option value="Dental Implant">Dental Implant Placement</option>
+                        <option value="Root Canal">Root Canal Therapy</option>
+                        <option value="Apicoectomy">Apicoectomy (Root End Surgery)</option>
+                        <option value="Gingivectomy">Gingivectomy (Gum Surgery)</option>
+                        <option value="Jaw Surgery">Orthognathic Jaw Surgery</option>
+                    </optgroup>
+                    <optgroup label="Other Specialties">
+                        <option value="Thyroidectomy">Thyroidectomy</option>
+                        <option value="Nephrectomy">Nephrectomy (Kidney Removal)</option>
+                        <option value="Hysterectomy">Hysterectomy</option>
+                        <option value="Cesarean Section">Cesarean Section</option>
+                    </optgroup>
+                </select>
+                <button id="startBtn" class="btn btn-start">▶ Start Surgery</button>
+            </div>
 
-        <div class="main-content">
-            <!-- Control Panel -->
-            <aside class="control-panel">
-                <div class="card">
-                    <h2>🎮 Control Panel</h2>
-
-                    <div class="scenario-setup">
-                        <label for="procedure">Procedure:</label>
-                        <select id="procedure">
-                            <optgroup label="General Surgery">
-                                <option value="Appendectomy">Appendectomy</option>
-                                <option value="Cholecystectomy">Cholecystectomy (Gallbladder Removal)</option>
-                                <option value="Hernia Repair">Hernia Repair</option>
-                                <option value="Bowel Resection">Bowel Resection</option>
-                                <option value="Mastectomy">Mastectomy</option>
-                            </optgroup>
-                            <optgroup label="Orthopedic Surgery">
-                                <option value="Hip Replacement">Hip Replacement</option>
-                                <option value="Knee Arthroscopy">Knee Arthroscopy</option>
-                                <option value="Spinal Fusion">Spinal Fusion</option>
-                                <option value="Fracture Fixation">Fracture Fixation</option>
-                            </optgroup>
-                            <optgroup label="Cardiovascular">
-                                <option value="Coronary Artery Bypass">Coronary Artery Bypass (CABG)</option>
-                                <option value="Valve Replacement">Heart Valve Replacement</option>
-                                <option value="Pacemaker Insertion">Pacemaker Insertion</option>
-                            </optgroup>
-                            <optgroup label="Dental Surgery">
-                                <option value="Wisdom Tooth Extraction">Wisdom Tooth Extraction</option>
-                                <option value="Dental Implant">Dental Implant Placement</option>
-                                <option value="Root Canal">Root Canal Therapy</option>
-                                <option value="Apicoectomy">Apicoectomy (Root End Surgery)</option>
-                                <option value="Gingivectomy">Gingivectomy (Gum Surgery)</option>
-                                <option value="Jaw Surgery">Orthognathic Jaw Surgery</option>
-                            </optgroup>
-                            <optgroup label="Other Specialties">
-                                <option value="Thyroidectomy">Thyroidectomy</option>
-                                <option value="Nephrectomy">Nephrectomy (Kidney Removal)</option>
-                                <option value="Hysterectomy">Hysterectomy</option>
-                                <option value="Cesarean Section">Cesarean Section</option>
-                            </optgroup>
-                        </select>
-                        <button id="startBtn" class="btn btn-primary">Start Surgery</button>
+            <!-- Status Cards -->
+            <div id="statusCards" class="status-cards" style="display:none;">
+                <div class="status-card phase-card">
+                    <div class="status-icon">📋</div>
+                    <div class="status-content">
+                        <div class="status-label">Phase</div>
+                        <div id="currentPhase" class="status-value">-</div>
                     </div>
+                </div>
 
-                    <div id="scenarioStatus" class="status-section" style="display:none;">
-                        <h3>📊 Status</h3>
-                        <div class="status-item">
-                            <span class="label">Phase:</span>
-                            <span id="currentPhase" class="value">-</span>
-                        </div>
-                        <div class="status-item">
-                            <span class="label">Score:</span>
-                            <span id="successScore" class="value score">100</span>
-                        </div>
-                        <div class="patient-status-card">
-                            <div class="patient-status-label">Patient Status:</div>
-                            <div id="patientStatus" class="patient-status-value">Stable</div>
+                <div class="status-card score-card">
+                    <div class="status-icon">⭐</div>
+                    <div class="status-content">
+                        <div class="status-label">Score</div>
+                        <div id="successScore" class="status-value">100</div>
+                    </div>
+                </div>
+
+                <div class="status-card patient-card">
+                    <div class="status-icon">🫀</div>
+                    <div class="status-content">
+                        <div class="status-label">Patient</div>
+                        <div id="patientStatus" class="status-value">Stable</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="phaseAdvanceNotification" class="phase-notification" style="display:none;">
+                <span class="phase-notification-icon">✨</span>
+                <span class="phase-notification-text">Phase advanced automatically</span>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="main-grid">
+            <!-- Left Sidebar: Vitals & Complications -->
+            <aside class="sidebar-left">
+                <!-- Vitals Monitor -->
+                <div id="vitalsMonitor" class="vitals-monitor" style="display:none;">
+                    <h3 class="sidebar-title">💓 Vital Signs Monitor</h3>
+                    <div class="vitals-grid">
+                        <div class="vital-card hr">
+                            <div class="vital-icon">❤️</div>
+                            <div class="vital-info">
+                                <div class="vital-label">Heart Rate</div>
+                                <div id="heartRate" class="vital-number">72</div>
+                                <div class="vital-unit">bpm</div>
+                            </div>
                         </div>
 
-                        <div id="phaseAdvanceNotification" class="phase-notification" style="display:none;">
-                            <span class="phase-notification-icon">✨</span>
-                            <span class="phase-notification-text">Phase advanced automatically</span>
+                        <div class="vital-card bp">
+                            <div class="vital-icon">🩺</div>
+                            <div class="vital-info">
+                                <div class="vital-label">Blood Pressure</div>
+                                <div id="bloodPressure" class="vital-number">120/80</div>
+                                <div class="vital-unit">mmHg</div>
+                            </div>
+                        </div>
+
+                        <div class="vital-card spo2">
+                            <div class="vital-icon">🫁</div>
+                            <div class="vital-info">
+                                <div class="vital-label">Oxygen Sat</div>
+                                <div id="oxygenSat" class="vital-number">98</div>
+                                <div class="vital-unit">%</div>
+                            </div>
+                        </div>
+
+                        <div class="vital-card temp">
+                            <div class="vital-icon">🌡️</div>
+                            <div class="vital-info">
+                                <div class="vital-label">Temperature</div>
+                                <div id="temperature" class="vital-number">37.0</div>
+                                <div class="vital-unit">°C</div>
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    <div id="vitalsMonitor" class="vitals-section" style="display:none;">
-                        <h3>💓 Vital Signs</h3>
-                        <div class="vital-item">
-                            <span class="vital-label">HR:</span>
-                            <span id="heartRate" class="vital-value">72 bpm</span>
-                        </div>
-                        <div class="vital-item">
-                            <span class="vital-label">BP:</span>
-                            <span id="bloodPressure" class="vital-value">120/80</span>
-                        </div>
-                        <div class="vital-item">
-                            <span class="vital-label">SpO₂:</span>
-                            <span id="oxygenSat" class="vital-value">98%</span>
-                        </div>
-                        <div class="vital-item">
-                            <span class="vital-label">Temp:</span>
-                            <span id="temperature" class="vital-value">37.0°C</span>
-                        </div>
-                    </div>
+                <!-- Complications -->
+                <div id="complications" class="complications-panel" style="display:none;">
+                    <h3 class="sidebar-title">⚠️ Active Complications</h3>
+                    <div id="complicationsList" class="complications-list"></div>
+                </div>
 
-                    <div id="complications" class="complications-section" style="display:none;">
-                        <h3>⚠️ Active Complications</h3>
-                        <div id="complicationsList"></div>
-                    </div>
-
-                    <div id="completionPanel" class="completion-panel" style="display:none;">
-                        <h3>✅ Surgery Complete</h3>
-                        <div id="completionResults"></div>
-                        <button id="viewSummaryBtn" class="btn btn-primary" style="margin-top: 1rem;">View Detailed Summary</button>
-                    </div>
+                <!-- Completion Panel -->
+                <div id="completionPanel" class="completion-panel" style="display:none;">
+                    <h3 class="sidebar-title">✅ Surgery Complete</h3>
+                    <div id="completionResults" class="completion-results"></div>
+                    <button id="viewSummaryBtn" class="btn btn-primary" style="margin-top: 1rem; width: 100%;">View Detailed Summary</button>
                 </div>
             </aside>
 
-            <!-- Chat Interface -->
-            <main class="chat-section">
-                <div class="card chat-card">
+            <!-- Center: Chat Interface -->
+            <main class="chat-container">
+                <div class="chat-card">
                     <div class="chat-header">
                         <h2>💬 Operating Room Communication</h2>
                     </div>
 
-                    <!-- Team Member Selection - Integrated into conversation -->
-                    <div id="teamSelection" class="team-selection-inline" style="display:none;">
-                        <div class="team-label">Select team member(s) to communicate with:</div>
-                        <div class="team-buttons-inline">
+                    <!-- Team Member Selection -->
+                    <div id="teamSelection" class="team-selection" style="display:none;">
+                        <div class="team-label">Select team member to communicate:</div>
+                        <div class="team-grid">
                             <button class="team-btn" data-agent="nurse">
                                 <span class="team-icon">👩‍⚕️</span>
                                 <span class="team-name">Nurse</span>
@@ -171,9 +201,9 @@
                         </div>
                     </div>
 
-                    <div class="chat-input-section">
+                    <div class="chat-input-area">
                         <div id="actionButtons" class="action-buttons-container" style="display:none;">
-                            <div class="actions-label">Quick Actions:</div>
+                            <div class="actions-header">Quick Actions:</div>
                             <div id="actionButtonsList" class="action-buttons"></div>
                         </div>
 
