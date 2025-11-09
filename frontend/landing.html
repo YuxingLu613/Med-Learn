@@ -21,11 +21,25 @@
                 <li><a href="#features">Features</a></li>
                 <li><a href="#how-it-works">How It Works</a></li>
             </ul>
-            <div class="nav-buttons">
-                <a href="/simulator.html" class="btn btn-primary">Start Training</a>
+            <div class="nav-buttons" id="navButtons">
+                <a href="/login.html" class="btn btn-secondary">Login</a>
+                <a href="/register.html" class="btn btn-primary">Sign Up</a>
             </div>
         </div>
     </nav>
+
+    <script>
+        // Check if user is logged in
+        const token = localStorage.getItem('accessToken');
+        const navButtons = document.getElementById('navButtons');
+
+        if (token) {
+            navButtons.innerHTML = `
+                <a href="/dashboard.html" class="btn btn-secondary">Dashboard</a>
+                <a href="/simulator.html" class="btn btn-primary">Start Training</a>
+            `;
+        }
+    </script>
 
     <!-- Hero Section -->
     <section class="hero">

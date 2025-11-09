@@ -2,23 +2,34 @@
 Main FastAPI application for the surgical training multi-agent system.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel, EmailStr
 from typing import Optional, List
+from sqlalchemy.orm import Session
 import os
 from dotenv import load_dotenv
+from datetime import timedelta
 
 from agents import AgentOrchestrator
 from scenario_engine import SurgicalScenario
 from actions import get_actions_for_role, get_action_prompt
+from database import get_db, init_db, User, TrainingSession
+from auth import verify_password, get_password_hash, create_access_token, decode_access_token
 
 # Load environment variables
 load_dotenv()
 
-app = FastAPI(title="Surgical Training Multi-Agent System")
+app = FastAPI(title="MedLearn - Surgical Training Platform")
+
+# Initialize database
+init_db()
+
+# Security
+security = HTTPBearer()
 
 # CORS middleware for frontend
 app.add_middleware(
@@ -31,10 +42,68 @@ app.add_middleware(
 
 # Global state (in production, use proper state management)
 orchestrator = AgentOrchestrator()
-scenario: Optional[SurgicalScenario] = None
+# Change to dict to support multiple users
+scenarios: dict = {}  # user_id -> SurgicalScenario
+
+
+# Helper function to get current user from token
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+) -> User:
+    """Get current user from JWT token."""
+    token = credentials.credentials
+    payload = decode_access_token(token)
+
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials"
+        )
+
+    username = payload.get("sub")
+    if username is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials"
+        )
+
+    user = db.query(User).filter(User.username == username).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+
+    return user
 
 
 # Request/Response models
+class RegisterRequest(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+    full_name: Optional[str] = None
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: dict
+
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    full_name: Optional[str]
+
+
 class StartScenarioRequest(BaseModel):
     procedure_name: str = "Appendectomy"
 
@@ -47,6 +116,18 @@ class ChatRequest(BaseModel):
 
 class ActionRequest(BaseModel):
     action: str
+
+
+class SaveSessionRequest(BaseModel):
+    procedure: str
+    timestamp: str
+    duration: Optional[str]
+    finalScore: int
+    failed: bool
+    complications: int
+    interactions: int
+    phasesCompleted: int
+    timeline: List[dict]
 
 
 class ChatResponse(BaseModel):
@@ -77,6 +158,93 @@ class EvaluationResponse(BaseModel):
 
 
 # API Endpoints
+
+# Authentication endpoints
+@app.post("/api/auth/register", response_model=TokenResponse)
+async def register(request: RegisterRequest, db: Session = Depends(get_db)):
+    """Register a new user."""
+    # Check if username already exists
+    existing_user = db.query(User).filter(User.username == request.username).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already registered"
+        )
+
+    # Check if email already exists
+    existing_email = db.query(User).filter(User.email == request.email).first()
+    if existing_email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+
+    # Create new user
+    hashed_password = get_password_hash(request.password)
+    new_user = User(
+        username=request.username,
+        email=request.email,
+        hashed_password=hashed_password,
+        full_name=request.full_name
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    # Create access token
+    access_token = create_access_token(data={"sub": new_user.username})
+
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user={
+            "id": new_user.id,
+            "username": new_user.username,
+            "email": new_user.email,
+            "full_name": new_user.full_name
+        }
+    )
+
+
+@app.post("/api/auth/login", response_model=TokenResponse)
+async def login(request: LoginRequest, db: Session = Depends(get_db)):
+    """Login user."""
+    user = db.query(User).filter(User.username == request.username).first()
+
+    if not user or not verify_password(request.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password"
+        )
+
+    # Create access token
+    access_token = create_access_token(data={"sub": user.username})
+
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user={
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "full_name": user.full_name
+        }
+    )
+
+
+@app.get("/api/auth/me", response_model=UserResponse)
+async def get_current_user_info(current_user: User = Depends(get_current_user)):
+    """Get current user information."""
+    return UserResponse(
+        id=current_user.id,
+        username=current_user.username,
+        email=current_user.email,
+        full_name=current_user.full_name
+    )
+
+
+# Page routes
 @app.get("/")
 async def root():
     """Serve the landing page."""
@@ -102,13 +270,29 @@ async def summary():
     """Serve the summary page."""
     return FileResponse("frontend/summary.html")
 
+@app.get("/login.html")
+async def login_page():
+    """Serve the login page."""
+    return FileResponse("frontend/login.html")
 
+@app.get("/register.html")
+async def register_page():
+    """Serve the registration page."""
+    return FileResponse("frontend/register.html")
+
+
+# Scenario endpoints (protected)
 @app.post("/api/scenario/start")
-async def start_scenario(request: StartScenarioRequest):
-    """Start a new surgical scenario."""
-    global scenario
+async def start_scenario(
+    request: StartScenarioRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Start a new surgical scenario for the current user."""
     scenario = SurgicalScenario(request.procedure_name)
     orchestrator.reset_all()
+
+    # Store scenario for this user
+    scenarios[current_user.id] = scenario
 
     return {
         "message": "Scenario started",
@@ -117,8 +301,9 @@ async def start_scenario(request: StartScenarioRequest):
 
 
 @app.get("/api/scenario/status")
-async def get_scenario_status():
-    """Get current scenario status."""
+async def get_scenario_status(current_user: User = Depends(get_current_user)):
+    """Get current scenario status for the current user."""
+    scenario = scenarios.get(current_user.id)
     if not scenario:
         raise HTTPException(status_code=400, detail="No active scenario")
 
@@ -126,8 +311,12 @@ async def get_scenario_status():
 
 
 @app.post("/api/chat")
-async def chat_with_agent(request: ChatRequest) -> ChatResponse:
+async def chat_with_agent(
+    request: ChatRequest,
+    current_user: User = Depends(get_current_user)
+) -> ChatResponse:
     """Send a message to a specific agent."""
+    scenario = scenarios.get(current_user.id)
     if not scenario:
         raise HTTPException(status_code=400, detail="No active scenario. Start a scenario first.")
 
@@ -178,8 +367,9 @@ async def chat_with_agent(request: ChatRequest) -> ChatResponse:
 
 
 @app.post("/api/scenario/advance")
-async def advance_phase():
+async def advance_phase(current_user: User = Depends(get_current_user)):
     """Advance to the next phase of surgery."""
+    scenario = scenarios.get(current_user.id)
     if not scenario:
         raise HTTPException(status_code=400, detail="No active scenario")
 
@@ -201,8 +391,12 @@ async def advance_phase():
 
 
 @app.post("/api/scenario/resolve")
-async def resolve_complication(request: ActionRequest):
+async def resolve_complication(
+    request: ActionRequest,
+    current_user: User = Depends(get_current_user)
+):
     """Attempt to resolve a complication."""
+    scenario = scenarios.get(current_user.id)
     if not scenario:
         raise HTTPException(status_code=400, detail="No active scenario")
 
@@ -403,6 +597,94 @@ IMPROVEMENTS:
             strengths=strengths if strengths else ["Completed the simulation", "Gained valuable experience"],
             improvements=improvements if improvements else ["Continue practicing", "Work on team communication"]
         )
+
+
+# Session management endpoints
+@app.post("/api/sessions/save")
+async def save_session(
+    request: SaveSessionRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Save a training session to the database."""
+    from datetime import datetime as dt
+
+    session = TrainingSession(
+        user_id=current_user.id,
+        procedure=request.procedure,
+        timestamp=dt.fromisoformat(request.timestamp.replace('Z', '+00:00')),
+        duration=request.duration,
+        final_score=request.finalScore,
+        failed=request.failed,
+        complications=request.complications,
+        interactions=request.interactions,
+        phases_completed=request.phasesCompleted,
+        timeline=request.timeline  # Will be automatically converted to JSON
+    )
+
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+
+    return {"message": "Session saved successfully", "session_id": session.id}
+
+
+@app.get("/api/sessions")
+async def get_sessions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all training sessions for the current user."""
+    sessions = db.query(TrainingSession).filter(
+        TrainingSession.user_id == current_user.id
+    ).order_by(TrainingSession.timestamp.desc()).all()
+
+    return {
+        "sessions": [
+            {
+                "id": s.id,
+                "procedure": s.procedure,
+                "timestamp": s.timestamp.isoformat(),
+                "duration": s.duration,
+                "finalScore": s.final_score,
+                "failed": s.failed,
+                "complications": s.complications,
+                "interactions": s.interactions,
+                "phasesCompleted": s.phases_completed,
+                "timeline": s.timeline
+            }
+            for s in sessions
+        ]
+    }
+
+
+@app.get("/api/sessions/{session_id}")
+async def get_session(
+    session_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get a specific training session."""
+    session = db.query(TrainingSession).filter(
+        TrainingSession.id == session_id,
+        TrainingSession.user_id == current_user.id
+    ).first()
+
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    return {
+        "id": session.id,
+        "procedure": session.procedure,
+        "timestamp": session.timestamp.isoformat(),
+        "duration": session.duration,
+        "finalScore": session.final_score,
+        "failed": session.failed,
+        "complications": session.complications,
+        "interactions": session.interactions,
+        "phasesCompleted": session.phases_completed,
+        "timeline": session.timeline
+    }
 
 
 # Serve static files
